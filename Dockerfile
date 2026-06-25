@@ -8,8 +8,7 @@ RUN npm install && npm run build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api-build
 WORKDIR /src
 COPY Source/App/Api/MoviesAndTVShowsToDo.Api.csproj Source/App/Api/
-COPY Source/App/Client/Client.esproj Source/App/Client/
-RUN dotnet restore Source/App/Api/MoviesAndTVShowsToDo.Api.csproj
+RUN dotnet restore Source/App/Api/MoviesAndTVShowsToDo.Api.csproj /p:SkipSpaBuild=true
 COPY Source/App/Api/ Source/App/Api/
 RUN mkdir -p Source/App/Api/wwwroot
 COPY --from=client-build /src/client/dist/ Source/App/Api/wwwroot/

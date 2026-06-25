@@ -17,7 +17,7 @@
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="10.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(SkipSpaBuild)' != 'true'">
     <ProjectReference Include="..\Client\Client.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
