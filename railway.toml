@@ -1,0 +1,15 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 120
+restartPolicyType = "on_failure"
+
+# Required Railway variables (set in the service Variables tab):
+#   DATABASE_URL  — reference from Postgres plugin: ${{Postgres.DATABASE_URL}}
+#   Tmdb__ApiKey  — TMDB API key
+#   Omdb__ApiKey  — OMDb API key (optional, for IMDB ratings)
+#
+# After deploy: Settings → Networking → Generate Domain

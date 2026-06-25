@@ -1,20 +1,28 @@
 using Marten;
+using Microsoft.AspNetCore.HttpOverrides;
+using MoviesAndTVShowsToDo.Api.Configuration;
 using MoviesAndTVShowsToDo.Api.Data;
 using MoviesAndTVShowsToDo.Api.Repositories;
 using MoviesAndTVShowsToDo.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var railwayPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(railwayPort))
+    builder.WebHost.UseUrls($"http://0.0.0.0:{railwayPort}");
+
 builder.Services.AddControllers();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+var connectionString = DatabaseUrlParser.FromEnvironment()
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is required.");
 
 builder.Services.AddMarten(options =>
 {
     options.Connection(connectionString);
     MartenStoreConfig.ConfigureStore(options);
-});
+})
+.ApplyAllDatabaseChangesOnStartup();
 
 builder.Services.AddScoped<IMediaRepository, MartenMediaRepository>();
 builder.Services.AddScoped<MediaService>();
@@ -40,6 +48,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+if (!app.Environment.IsDevelopment())
+{
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    });
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseCors("SpaDev");
@@ -50,6 +66,7 @@ else
     app.UseStaticFiles();
 }
 
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 app.MapControllers();
 
 if (!app.Environment.IsDevelopment())
