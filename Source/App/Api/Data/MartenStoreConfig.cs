@@ -1,0 +1,14 @@
+using Marten;
+using MoviesAndTVShowsToDo.Api.Models;
+
+namespace MoviesAndTVShowsToDo.Api.Data;
+
+public static class MartenStoreConfig
+{
+    public static void ConfigureStore(StoreOptions options)
+    {
+        options.Schema.For<MediaItem>()
+            .Identity(x => x.Id)
+            .Index(x => x.IsWatched);
+    }
+}
