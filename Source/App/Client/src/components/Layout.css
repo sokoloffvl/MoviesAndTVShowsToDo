@@ -51,6 +51,74 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+.btn-refresh-all {
+  padding: 0.45rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  background: transparent;
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.btn-refresh-all:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-refresh-all:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refresh-all-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  min-width: 160px;
+}
+
+.refresh-all-progress {
+  width: 100%;
+  max-width: 220px;
+}
+
+.refresh-all-progress-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.refresh-all-progress-fill {
+  height: 100%;
+  background: #60a5fa;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.refresh-all-progress-label {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  text-align: right;
+}
+
+.global-message {
+  padding: 0.65rem 1.25rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-bottom: 1px solid #bfdbfe;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 .main {
   flex: 1;
   padding: 1.25rem;

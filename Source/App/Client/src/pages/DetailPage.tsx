@@ -10,6 +10,7 @@ export function DetailPage() {
   const [item, setItem] = useState<MediaDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingSeasons, setUpdatingSeasons] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -31,6 +32,23 @@ export function DetailPage() {
     if (!item) return;
     const updated = await api.markWatched(item.id, !item.isWatched);
     setItem(updated);
+    if (updated.isWatched) {
+      navigate('/');
+    }
+  };
+
+  const handleSeasonChange = async (watchedSeasons: number) => {
+    if (!item) return;
+    setUpdatingSeasons(true);
+    try {
+      const updated = await api.updateWatchedSeasons(item.id, watchedSeasons);
+      setItem(updated);
+      if (updated.isWatched) {
+        navigate('/');
+      }
+    } finally {
+      setUpdatingSeasons(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -45,6 +63,10 @@ export function DetailPage() {
   const trailerUrl = item.trailerYoutubeKey
     ? `https://www.youtube.com/embed/${item.trailerYoutubeKey}`
     : null;
+  const isTvShow = item.mediaType === 'TvShow';
+  const totalSeasons = item.totalSeasons ?? 0;
+  const watchedSeasons = item.watchedSeasons ?? 0;
+  const remainingSeasons = Math.max(totalSeasons - watchedSeasons, 0);
 
   return (
     <section className="detail-page">
@@ -59,16 +81,28 @@ export function DetailPage() {
         <div className="detail-hero-overlay">
           {item.posterUrl && <img src={item.posterUrl} alt={item.title} className="detail-poster" />}
           <div>
-            <span className="badge">{item.mediaType === 'TvShow' ? 'TV Show' : 'Movie'}</span>
+            <span className="badge">{isTvShow ? 'TV Show' : 'Movie'}</span>
+            {item.year != null && <span className="detail-year">{item.year}</span>}
             <h1>{item.title}</h1>
             <div className="detail-ratings">
               {item.imdbRating != null && <span>IMDb {item.imdbRating.toFixed(1)}</span>}
               {item.rottenTomatoesRating != null && <span>RT {item.rottenTomatoesRating}%</span>}
             </div>
+            {item.genres.length > 0 && (
+              <div className="detail-genres">
+                {item.genres.map((genre) => (
+                  <span key={genre} className="genre-chip">
+                    {genre}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="detail-actions">
-              <button type="button" onClick={() => void toggleWatched()}>
-                {item.isWatched ? 'Mark unwatched' : 'Mark watched'}
-              </button>
+              {!isTvShow && (
+                <button type="button" onClick={() => void toggleWatched()}>
+                  {item.isWatched ? 'Mark unwatched' : 'Mark watched'}
+                </button>
+              )}
               <button type="button" className="btn-danger" onClick={() => void handleDelete()}>
                 Remove
               </button>
@@ -76,6 +110,34 @@ export function DetailPage() {
           </div>
         </div>
       </div>
+
+      {isTvShow && totalSeasons > 0 && (
+        <section className="detail-section">
+          <h2>Seasons</h2>
+          <p className="season-summary">
+            {totalSeasons} season{totalSeasons === 1 ? '' : 's'} total
+            {watchedSeasons > 0 && remainingSeasons > 0 && (
+              <> · watched {watchedSeasons}, {remainingSeasons} more to go</>
+            )}
+            {watchedSeasons >= totalSeasons && <> · all seasons watched</>}
+          </p>
+          <div className="season-controls">
+            <label htmlFor="watched-seasons">Seasons watched</label>
+            <select
+              id="watched-seasons"
+              value={watchedSeasons}
+              disabled={updatingSeasons}
+              onChange={(e) => void handleSeasonChange(Number(e.target.value))}
+            >
+              {Array.from({ length: totalSeasons + 1 }, (_, index) => (
+                <option key={index} value={index}>
+                  {index === 0 ? 'None' : index === totalSeasons ? `All ${totalSeasons}` : `${index} season${index === 1 ? '' : 's'}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        </section>
+      )}
 
       {item.description && (
         <section className="detail-section">

@@ -15,6 +15,10 @@ public class MediaItem
     public string? TrailerYoutubeKey { get; set; }
     public List<CastMember> Cast { get; set; } = [];
     public List<WatchSource> WatchSources { get; set; } = [];
+    public List<string> Genres { get; set; } = [];
+    public int? Year { get; set; }
+    public int? TotalSeasons { get; set; }
+    public int? WatchedSeasons { get; set; }
     public bool IsWatched { get; set; }
     public DateTimeOffset? WatchedAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

@@ -1,16 +1,26 @@
-import { type FormEvent, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { type FormEvent, useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { MediaSearchResult } from '../types/media';
 import './AddMediaPage.css';
 
 export function AddMediaPage() {
-  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MediaSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notification) return;
+    const timer = window.setTimeout(() => setNotification(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [notification]);
+
+  const showAdded = (title: string) => {
+    setNotification(`${title} added`);
+    setResults([]);
+  };
 
   const handleSearch = async (event: FormEvent) => {
     event.preventDefault();
@@ -36,7 +46,7 @@ export function AddMediaPage() {
     setError(null);
     try {
       const item = await api.addMedia(query.trim());
-      navigate(`/media/${item.id}`);
+      showAdded(item.title);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not add media');
     } finally {
@@ -49,7 +59,7 @@ export function AddMediaPage() {
     setError(null);
     try {
       const item = await api.addFromSearch(hit.externalId, hit.mediaType);
-      navigate(`/media/${item.id}`);
+      showAdded(item.title);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not add media');
     } finally {
@@ -63,6 +73,8 @@ export function AddMediaPage() {
         <h1>Add to watchlist</h1>
         <p>Enter a title or paste an IMDB URL — we&apos;ll pull ratings, streaming sources, and more.</p>
       </div>
+
+      {notification && <div className="add-notification" role="status">{notification}</div>}
 
       <form className="search-form" onSubmit={handleSearch}>
         <input

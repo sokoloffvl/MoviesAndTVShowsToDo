@@ -86,6 +86,8 @@ public class TmdbMetadataProvider(HttpClient http, IOptions<TmdbOptions> options
         {
             Title = details.Title ?? details.Name ?? "Unknown",
             Type = type,
+            Year = ParseYear(details.ReleaseDate ?? details.FirstAirDate),
+            TotalSeasons = type == MediaType.TvShow ? details.NumberOfSeasons : null,
             PosterUrl = BuildImageUrl(details.PosterPath),
             BackdropUrl = BuildBackdropUrl(details.BackdropPath),
             ImdbRating = details.VoteAverage > 0 ? details.VoteAverage : null,
@@ -94,9 +96,13 @@ public class TmdbMetadataProvider(HttpClient http, IOptions<TmdbOptions> options
             TmdbId = tmdbId.ToString(),
             TrailerYoutubeKey = trailerKey,
             Cast = cast,
-            WatchSources = MapWatchProviders(details.WatchProviders?.Results?.Us)
+            WatchSources = MapWatchProviders(details.WatchProviders?.Results?.Us),
+            Genres = MapGenres(details.Genres)
         };
     }
+
+    private static List<string> MapGenres(List<TmdbGenre>? genres) =>
+        genres?.Take(3).Select(g => g.Name).Where(n => !string.IsNullOrWhiteSpace(n)).ToList() ?? [];
 
     private string? BuildImageUrl(string? path) =>
         string.IsNullOrWhiteSpace(path) ? null : $"{_options.ImageBaseUrl}{path}";
@@ -179,6 +185,18 @@ public class TmdbMetadataProvider(HttpClient http, IOptions<TmdbOptions> options
         [JsonPropertyName("vote_average")]
         public double VoteAverage { get; set; }
 
+        [JsonPropertyName("release_date")]
+        public string? ReleaseDate { get; set; }
+
+        [JsonPropertyName("first_air_date")]
+        public string? FirstAirDate { get; set; }
+
+        [JsonPropertyName("number_of_seasons")]
+        public int? NumberOfSeasons { get; set; }
+
+        [JsonPropertyName("genres")]
+        public List<TmdbGenre>? Genres { get; set; }
+
         [JsonPropertyName("external_ids")]
         public TmdbExternalIds? ExternalIds { get; set; }
 
@@ -196,6 +214,12 @@ public class TmdbMetadataProvider(HttpClient http, IOptions<TmdbOptions> options
     {
         [JsonPropertyName("imdb_id")]
         public string? ImdbId { get; set; }
+    }
+
+    private sealed class TmdbGenre
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
     }
 
     private sealed class TmdbCredits

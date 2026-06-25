@@ -6,17 +6,22 @@ public record MediaSummaryDto(
     Guid Id,
     string Title,
     string MediaType,
+    int? Year,
     string? PosterUrl,
     double? ImdbRating,
     int? RottenTomatoesRating,
     string? Description,
     IReadOnlyList<string> WatchProviders,
+    IReadOnlyList<string> Genres,
+    int? TotalSeasons,
+    int? WatchedSeasons,
     bool IsWatched);
 
 public record MediaDetailDto(
     Guid Id,
     string Title,
     string MediaType,
+    int? Year,
     string? PosterUrl,
     string? BackdropUrl,
     double? ImdbRating,
@@ -26,6 +31,9 @@ public record MediaDetailDto(
     string? TrailerYoutubeKey,
     IReadOnlyList<CastMemberDto> Cast,
     IReadOnlyList<WatchSourceDto> WatchSources,
+    IReadOnlyList<string> Genres,
+    int? TotalSeasons,
+    int? WatchedSeasons,
     bool IsWatched,
     DateTimeOffset? WatchedAt,
     DateTimeOffset CreatedAt);
@@ -43,3 +51,19 @@ public record MediaSearchResultDto(
     int? Year,
     string? PosterUrl,
     double? Rating);
+
+public record RefreshHistoryResultDto(
+    int RefreshedCount,
+    int SkippedCount,
+    IReadOnlyList<string> MovedToWatchlist);
+
+public record RefreshAllResultDto(
+    int RefreshedCount,
+    int SkippedCount,
+    IReadOnlyList<string> MovedToWatchlist);
+
+public record RefreshProgressDto(
+    int Completed,
+    int Total,
+    string? CurrentTitle,
+    RefreshAllResultDto? Result = null);
