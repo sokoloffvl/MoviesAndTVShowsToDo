@@ -1,10 +1,8 @@
-# Build React client
-FROM node:22-alpine AS client-build
+# Build React client (use slim/glibc — Alpine musl breaks Rollup optional native deps)
+FROM node:22-slim AS client-build
 WORKDIR /src/client
-COPY Source/App/Client/package.json Source/App/Client/package-lock.json ./
-RUN npm ci
 COPY Source/App/Client/ ./
-RUN npm run build
+RUN npm ci && npm run build
 
 # Build and publish API (SPA copied into wwwroot by client-build stage)
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api-build
