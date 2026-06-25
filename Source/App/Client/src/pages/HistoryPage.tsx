@@ -65,7 +65,6 @@ export function HistoryPage() {
     }
   };
 
-  if (loading) return <div className="page-loading">Loading history…</div>;
   if (error) return <div className="page-error">{error}</div>;
 
   return (
@@ -89,7 +88,9 @@ export function HistoryPage() {
 
       <MediaListControls params={params} onChange={setParams} />
 
-      {items.length === 0 ? (
+      {loading ? (
+        <div className="page-loading">Loading history…</div>
+      ) : items.length === 0 ? (
         <div className="empty-state">No watched titles yet.</div>
       ) : (
         <div className="media-grid">

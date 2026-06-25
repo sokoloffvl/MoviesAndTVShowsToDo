@@ -53,7 +53,6 @@ export function HomePage() {
     setRateTarget(null);
   };
 
-  if (loading) return <div className="page-loading">Loading watchlist…</div>;
   if (error) return <div className="page-error">{error}</div>;
 
   return (
@@ -65,7 +64,9 @@ export function HomePage() {
 
       <MediaListControls params={params} onChange={setParams} />
 
-      {items.length === 0 ? (
+      {loading ? (
+        <div className="page-loading">Loading watchlist…</div>
+      ) : items.length === 0 ? (
         <div className="empty-state">
           <p>Nothing here yet. Add a title or IMDB link to get started.</p>
         </div>
