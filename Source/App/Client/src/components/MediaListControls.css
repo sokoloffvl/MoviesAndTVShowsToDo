@@ -29,6 +29,26 @@
   font-weight: 500;
 }
 
+.media-list-controls .search-field {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.media-list-controls .search-field input {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 500;
+  width: 100%;
+}
+
+.media-list-controls .search-field input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
 .media-list-controls .sort-direction {
   flex-direction: row;
   align-items: center;

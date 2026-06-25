@@ -45,6 +45,13 @@ public class MartenMediaRepository(IDocumentSession session) : IMediaRepository
                 .ToList();
         }
 
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            items = items
+                .Where(m => MatchesSearch(m, query.Search))
+                .ToList();
+        }
+
         return ApplySort(items, query.SortBy, query.SortDescending);
     }
 
@@ -131,5 +138,12 @@ public class MartenMediaRepository(IDocumentSession session) : IMediaRepository
             return forDescending ? int.MinValue : int.MaxValue;
 
         return Math.Max(0, item.TotalSeasons.Value - (item.WatchedSeasons ?? 0));
+    }
+
+    private static bool MatchesSearch(MediaItem item, string search)
+    {
+        var term = search.Trim();
+        return item.Title.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || (item.Description?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false);
     }
 }

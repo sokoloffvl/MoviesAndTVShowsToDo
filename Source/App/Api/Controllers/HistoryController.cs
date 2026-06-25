@@ -16,6 +16,7 @@ public class HistoryController(MediaService mediaService) : ControllerBase
         [FromQuery] double? minRating,
         [FromQuery] string? genre,
         [FromQuery] bool inProgress = false,
+        [FromQuery] string? search = null,
         [FromQuery] MediaSortField sortBy = MediaSortField.CreatedAt,
         [FromQuery] bool sortDescending = true,
         CancellationToken ct = default) =>
@@ -28,7 +29,8 @@ public class HistoryController(MediaService mediaService) : ControllerBase
                 sortBy,
                 sortDescending,
                 genre,
-                inProgress ? true : null),
+                inProgress ? true : null,
+                search),
             ct));
 
     [HttpPost("refresh")]

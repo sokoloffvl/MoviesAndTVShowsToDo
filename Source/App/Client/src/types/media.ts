@@ -80,6 +80,7 @@ export interface MediaListParams {
   provider?: string;
   genre?: string;
   tvProgress?: TvProgressFilter;
+  search?: string;
   minRating?: number;
   sortBy?: SortField;
   sortDescending?: boolean;

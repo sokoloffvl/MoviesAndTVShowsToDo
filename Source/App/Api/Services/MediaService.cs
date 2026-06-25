@@ -23,6 +23,15 @@ public class MediaService(IMediaRepository repository, IMetadataAggregator metad
             .ToList();
     }
 
+    public async Task<MediaSummaryDto?> GetRandomUnwatchedAsync(CancellationToken ct = default)
+    {
+        var items = await repository.GetAllAsync(new MediaListQuery(Watched: false), ct);
+        if (items.Count == 0)
+            return null;
+
+        return ToSummaryDto(items[Random.Shared.Next(items.Count)]);
+    }
+
     public async Task<MediaDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default)
     {
         var item = await repository.GetByIdAsync(id, ct);

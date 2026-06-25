@@ -16,6 +16,7 @@ function buildQuery(params?: MediaListParams): string {
   if (params.provider) search.set('provider', params.provider);
   if (params.genre) search.set('genre', params.genre);
   if (params.tvProgress === 'inProgress') search.set('inProgress', 'true');
+  if (params.search?.trim()) search.set('search', params.search.trim());
   if (params.minRating != null && params.minRating > 0) {
     search.set('minRating', String(params.minRating));
   }
@@ -113,6 +114,15 @@ async function readRefreshStream(
 
 export const api = {
   getGenres: () => request<string[]>('/media/genres'),
+  getRandomPick: async () => {
+    const response = await fetch(`${API_BASE}/media/random`);
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || response.statusText);
+    }
+    return (await response.json()) as MediaSummary;
+  },
   getWatchlist: (params?: MediaListParams) =>
     request<MediaSummary[]>(`/media${buildQuery(params)}`),
   getHistory: (params?: MediaListParams) =>

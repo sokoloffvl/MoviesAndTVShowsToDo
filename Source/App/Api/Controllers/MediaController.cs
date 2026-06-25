@@ -21,16 +21,24 @@ public class MediaController(MediaService mediaService) : ControllerBase
         [FromQuery] double? minRating,
         [FromQuery] string? genre,
         [FromQuery] bool inProgress = false,
+        [FromQuery] string? search = null,
         [FromQuery] MediaSortField sortBy = MediaSortField.CreatedAt,
         [FromQuery] bool sortDescending = true,
         CancellationToken ct = default) =>
         Ok(await mediaService.GetWatchlistAsync(
-            BuildListQuery(type, provider, minRating, genre, inProgress, sortBy, sortDescending),
+            BuildListQuery(type, provider, minRating, genre, inProgress, search, sortBy, sortDescending),
             ct));
 
     [HttpGet("genres")]
     public async Task<ActionResult<IReadOnlyList<string>>> GetGenres(CancellationToken ct) =>
         Ok(await mediaService.GetGenresAsync(ct));
+
+    [HttpGet("random")]
+    public async Task<ActionResult<MediaSummaryDto>> GetRandom(CancellationToken ct)
+    {
+        var item = await mediaService.GetRandomUnwatchedAsync(ct);
+        return item is null ? NotFound() : Ok(item);
+    }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<MediaDetailDto>> GetById(Guid id, CancellationToken ct)
@@ -116,6 +124,7 @@ public class MediaController(MediaService mediaService) : ControllerBase
         double? minRating,
         string? genre,
         bool inProgress,
+        string? search,
         MediaSortField sortBy,
         bool sortDescending) =>
         new(
@@ -126,5 +135,6 @@ public class MediaController(MediaService mediaService) : ControllerBase
             sortBy,
             sortDescending,
             genre,
-            inProgress ? true : null);
+            inProgress ? true : null,
+            search);
 }

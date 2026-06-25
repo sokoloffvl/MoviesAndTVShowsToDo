@@ -63,6 +63,7 @@ export function Layout() {
             Watchlist
           </NavLink>
           <NavLink to="/add">Add</NavLink>
+          <NavLink to="/random">Random pick</NavLink>
           <NavLink to="/history">History</NavLink>
         </nav>
         <div className="refresh-all-wrap">

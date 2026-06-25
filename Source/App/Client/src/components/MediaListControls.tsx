@@ -12,7 +12,24 @@ interface MediaListControlsProps {
 
 export function MediaListControls({ params, onChange }: MediaListControlsProps) {
   const [genres, setGenres] = useState<string[]>([]);
+  const [searchInput, setSearchInput] = useState(params.search ?? '');
   const update = (patch: Partial<MediaListParams>) => onChange({ ...params, ...patch });
+
+  useEffect(() => {
+    setSearchInput(params.search ?? '');
+  }, [params.search]);
+
+  useEffect(() => {
+    const trimmed = searchInput.trim();
+    const current = params.search?.trim() ?? '';
+    if (trimmed === current) return;
+
+    const timer = window.setTimeout(() => {
+      update({ search: trimmed || undefined });
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [searchInput, params.search]);
 
   useEffect(() => {
     const loadGenres = () => {
@@ -25,6 +42,16 @@ export function MediaListControls({ params, onChange }: MediaListControlsProps) 
 
   return (
     <div className="media-list-controls">
+      <label className="search-field">
+        Search
+        <input
+          type="search"
+          value={searchInput}
+          placeholder="Title or description…"
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
+      </label>
+
       <label>
         Type
         <select

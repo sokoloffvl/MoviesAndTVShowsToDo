@@ -18,4 +18,5 @@ public record MediaListQuery(
     MediaSortField SortBy = MediaSortField.CreatedAt,
     bool SortDescending = true,
     string? Genre = null,
-    bool? InProgressOnly = null);
+    bool? InProgressOnly = null,
+    string? Search = null);

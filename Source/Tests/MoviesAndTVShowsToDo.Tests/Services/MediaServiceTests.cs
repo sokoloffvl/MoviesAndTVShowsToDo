@@ -497,6 +497,68 @@ public class MediaServiceTests
         Assert.That(watchlist.Select(w => w.Title), Is.EqualTo(["Almost Done", "Many Left"]));
     }
 
+    [Test]
+    public async Task GetWatchlistAsync_FiltersBySearchText()
+    {
+        await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "The Matrix",
+            Type = MediaType.Movie,
+            Description = "A computer hacker learns about reality.",
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Arrival",
+            Type = MediaType.Movie,
+            Description = "A linguist communicates with aliens.",
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        var byTitle = await _service.GetWatchlistAsync(new MediaListQuery(Search: "matrix"));
+        var byDescription = await _service.GetWatchlistAsync(new MediaListQuery(Search: "aliens"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(byTitle.Select(w => w.Title), Is.EqualTo(["The Matrix"]));
+            Assert.That(byDescription.Select(w => w.Title), Is.EqualTo(["Arrival"]));
+        });
+    }
+
+    [Test]
+    public async Task GetRandomUnwatchedAsync_ReturnsNullWhenWatchlistEmpty()
+    {
+        var result = await _service.GetRandomUnwatchedAsync();
+
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task GetRandomUnwatchedAsync_ReturnsUnwatchedItem()
+    {
+        await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Dune",
+            Type = MediaType.Movie,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Watched",
+            Type = MediaType.Movie,
+            IsWatched = true,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        var result = await _service.GetRandomUnwatchedAsync();
+
+        Assert.That(result!.Title, Is.EqualTo("Dune"));
+    }
+
     private static MediaMetadata SampleMetadata(string title) => new()
     {
         Title = title,
@@ -556,6 +618,14 @@ public class MediaServiceTests
                     && i.TotalSeasons.HasValue
                     && (i.WatchedSeasons ?? 0) > 0
                     && (i.WatchedSeasons ?? 0) < i.TotalSeasons.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var term = query.Search.Trim();
+                results = results.Where(i =>
+                    i.Title.Contains(term, StringComparison.OrdinalIgnoreCase)
+                    || (i.Description?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
             }
 
             results = query.SortBy switch
