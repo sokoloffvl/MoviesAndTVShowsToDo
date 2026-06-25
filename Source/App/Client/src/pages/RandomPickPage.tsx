@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client';
 import { MediaCard } from '../components/MediaCard';
+import { RateMediaModal } from '../components/RateMediaModal';
 import { MEDIA_REFRESHED_EVENT } from '../events/mediaRefresh';
 import type { MediaSummary } from '../types/media';
+import type { UserRatingsInput } from '../types/userRatings';
 import './RandomPickPage.css';
 
 export function RandomPickPage() {
@@ -10,6 +12,7 @@ export function RandomPickPage() {
   const [loading, setLoading] = useState(true);
   const [empty, setEmpty] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rateTarget, setRateTarget] = useState<MediaSummary | null>(null);
 
   const pickRandom = useCallback(async () => {
     setLoading(true);
@@ -36,8 +39,14 @@ export function RandomPickPage() {
     return () => window.removeEventListener(MEDIA_REFRESHED_EVENT, handler);
   }, [pickRandom]);
 
-  const handleMarkWatched = async (id: string) => {
-    await api.markWatched(id, true);
+  const handleMarkWatched = (item: MediaSummary) => {
+    setRateTarget(item);
+  };
+
+  const submitRating = async (ratings: UserRatingsInput) => {
+    if (!rateTarget) return;
+    await api.markWatched(rateTarget.id, true, ratings);
+    setRateTarget(null);
     await pickRandom();
   };
 
@@ -67,6 +76,13 @@ export function RandomPickPage() {
           </div>
         )
       )}
+
+      <RateMediaModal
+        open={rateTarget != null}
+        title={rateTarget?.title ?? ''}
+        onCancel={() => setRateTarget(null)}
+        onSubmit={submitRating}
+      />
     </section>
   );
 }

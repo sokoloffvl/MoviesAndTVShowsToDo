@@ -1,3 +1,7 @@
+import type { UserRatings } from './userRatings';
+
+export type { UserRatings };
+
 export interface MediaSummary {
   id: string;
   title: string;
@@ -11,6 +15,7 @@ export interface MediaSummary {
   genres: string[];
   totalSeasons: number | null;
   watchedSeasons: number | null;
+  userRatings: UserRatings;
   isWatched: boolean;
 }
 

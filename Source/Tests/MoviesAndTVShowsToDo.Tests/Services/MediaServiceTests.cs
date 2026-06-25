@@ -64,13 +64,71 @@ public class MediaServiceTests
             CreatedAt = DateTimeOffset.UtcNow
         });
 
-        var updated = await _service.MarkWatchedAsync(item.Id, watched: true);
+        var updated = await _service.MarkWatchedAsync(
+            item.Id,
+            watched: true,
+            ratings: new UserRatingsInput(8, 7, 9));
 
         Assert.Multiple(() =>
         {
             Assert.That(updated, Is.Not.Null);
             Assert.That(updated!.IsWatched, Is.True);
             Assert.That(updated.WatchedAt, Is.Not.Null);
+            Assert.That(updated.UserRatings.Story, Is.EqualTo(8));
+            Assert.That(updated.UserRatings.Intensity, Is.EqualTo(7));
+            Assert.That(updated.UserRatings.Style, Is.EqualTo(9));
+        });
+    }
+
+    [Test]
+    public async Task MarkWatchedAsync_ClearsUserRatingsWhenUnwatched()
+    {
+        var item = await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Arrival",
+            Type = MediaType.Movie,
+            StoryRating = 8,
+            IntensityRating = 7,
+            StyleRating = 9,
+            IsWatched = true,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        var updated = await _service.MarkWatchedAsync(item.Id, watched: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(updated!.UserRatings.Story, Is.Null);
+            Assert.That(updated.UserRatings.Intensity, Is.Null);
+            Assert.That(updated.UserRatings.Style, Is.Null);
+        });
+    }
+
+    [Test]
+    public async Task UpdateWatchedSeasonsAsync_SavesUserRatings()
+    {
+        var item = await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Severance",
+            Type = MediaType.TvShow,
+            TotalSeasons = 2,
+            WatchedSeasons = 0,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        var updated = await _service.UpdateWatchedSeasonsAsync(
+            item.Id,
+            watchedSeasons: 1,
+            ratings: new UserRatingsInput(9, 6, 8));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(updated!.WatchedSeasons, Is.EqualTo(1));
+            Assert.That(updated.UserRatings.Story, Is.EqualTo(9));
+            Assert.That(updated.UserRatings.Intensity, Is.EqualTo(6));
+            Assert.That(updated.UserRatings.Style, Is.EqualTo(8));
         });
     }
 

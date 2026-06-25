@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client';
 import { MediaCard } from '../components/MediaCard';
 import { MediaListControls } from '../components/MediaListControls';
+import { RateMediaModal } from '../components/RateMediaModal';
 import { MEDIA_REFRESHED_EVENT } from '../events/mediaRefresh';
 import type { MediaListParams, MediaSummary } from '../types/media';
+import type { UserRatingsInput } from '../types/userRatings';
 import './HomePage.css';
 
 const defaultParams: MediaListParams = {
@@ -16,6 +18,7 @@ export function HomePage() {
   const [params, setParams] = useState<MediaListParams>(defaultParams);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rateTarget, setRateTarget] = useState<MediaSummary | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -39,9 +42,15 @@ export function HomePage() {
     return () => window.removeEventListener(MEDIA_REFRESHED_EVENT, handler);
   }, [load]);
 
-  const handleMarkWatched = async (id: string) => {
-    await api.markWatched(id, true);
-    setItems((current) => current.filter((item) => item.id !== id));
+  const handleMarkWatched = (item: MediaSummary) => {
+    setRateTarget(item);
+  };
+
+  const submitRating = async (ratings: UserRatingsInput) => {
+    if (!rateTarget) return;
+    await api.markWatched(rateTarget.id, true, ratings);
+    setItems((current) => current.filter((item) => item.id !== rateTarget.id));
+    setRateTarget(null);
   };
 
   if (loading) return <div className="page-loading">Loading watchlist…</div>;
@@ -67,6 +76,13 @@ export function HomePage() {
           ))}
         </div>
       )}
+
+      <RateMediaModal
+        open={rateTarget != null}
+        title={rateTarget?.title ?? ''}
+        onCancel={() => setRateTarget(null)}
+        onSubmit={submitRating}
+      />
     </section>
   );
 }

@@ -1,0 +1,23 @@
+.user-ratings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.user-ratings span {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.user-ratings.compact span {
+  font-size: 0.7rem;
+}
+
+.detail-hero .user-ratings span {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}

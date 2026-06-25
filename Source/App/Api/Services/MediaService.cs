@@ -71,13 +71,37 @@ public class MediaService(IMediaRepository repository, IMetadataAggregator metad
         return ToDetailDto(await SaveAsync(metadata, ct));
     }
 
-    public async Task<MediaDetailDto?> MarkWatchedAsync(Guid id, bool watched, CancellationToken ct = default)
+    public async Task<MediaDetailDto?> MarkWatchedAsync(
+        Guid id,
+        bool watched,
+        UserRatingsInput? ratings = null,
+        CancellationToken ct = default)
     {
         var item = await repository.MarkWatchedAsync(id, watched, ct);
-        return item is null ? null : ToDetailDto(item);
+        if (item is null)
+            return null;
+
+        if (watched)
+        {
+            if (ratings is not null)
+                ApplyUserRatings(item, ratings);
+        }
+        else
+        {
+            ClearUserRatings(item);
+        }
+
+        if (ratings is not null || !watched)
+            item = await repository.UpdateAsync(item, ct);
+
+        return ToDetailDto(item);
     }
 
-    public async Task<MediaDetailDto?> UpdateWatchedSeasonsAsync(Guid id, int watchedSeasons, CancellationToken ct = default)
+    public async Task<MediaDetailDto?> UpdateWatchedSeasonsAsync(
+        Guid id,
+        int watchedSeasons,
+        UserRatingsInput? ratings = null,
+        CancellationToken ct = default)
     {
         var item = await repository.GetByIdAsync(id, ct);
         if (item is null || item.Type != MediaType.TvShow || !item.TotalSeasons.HasValue)
@@ -86,6 +110,9 @@ public class MediaService(IMediaRepository repository, IMetadataAggregator metad
         item.WatchedSeasons = Math.Clamp(watchedSeasons, 0, item.TotalSeasons.Value);
         item.IsWatched = item.WatchedSeasons >= item.TotalSeasons;
         item.WatchedAt = item.IsWatched ? DateTimeOffset.UtcNow : null;
+
+        if (ratings is not null)
+            ApplyUserRatings(item, ratings);
 
         return ToDetailDto(await repository.UpdateAsync(item, ct));
     }
@@ -209,6 +236,27 @@ public class MediaService(IMediaRepository repository, IMetadataAggregator metad
     public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default) =>
         repository.DeleteAsync(id, ct);
 
+    private static void ApplyUserRatings(MediaItem item, UserRatingsInput ratings)
+    {
+        UserRatings.Validate(ratings.Story, nameof(ratings.Story));
+        UserRatings.Validate(ratings.Intensity, nameof(ratings.Intensity));
+        UserRatings.Validate(ratings.Style, nameof(ratings.Style));
+
+        item.StoryRating = ratings.Story;
+        item.IntensityRating = ratings.Intensity;
+        item.StyleRating = ratings.Style;
+    }
+
+    private static void ClearUserRatings(MediaItem item)
+    {
+        item.StoryRating = null;
+        item.IntensityRating = null;
+        item.StyleRating = null;
+    }
+
+    private static UserRatingsDto ToUserRatingsDto(MediaItem item) =>
+        new(item.StoryRating, item.IntensityRating, item.StyleRating);
+
     private async Task<MediaItem> SaveAsync(MediaMetadata metadata, CancellationToken ct)
     {
         var item = new MediaItem
@@ -256,6 +304,7 @@ public class MediaService(IMediaRepository repository, IMetadataAggregator metad
         item.Genres,
         item.TotalSeasons,
         item.WatchedSeasons,
+        ToUserRatingsDto(item),
         item.IsWatched);
 
     private static MediaDetailDto ToDetailDto(MediaItem item) => new(
@@ -275,6 +324,7 @@ public class MediaService(IMediaRepository repository, IMetadataAggregator metad
         item.Genres,
         item.TotalSeasons,
         item.WatchedSeasons,
+        ToUserRatingsDto(item),
         item.IsWatched,
         item.WatchedAt,
         item.CreatedAt);

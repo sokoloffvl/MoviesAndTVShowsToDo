@@ -7,6 +7,7 @@ import type {
   RefreshHistoryResult,
   RefreshProgress,
 } from '../types/media';
+import type { UserRatingsInput } from '../types/userRatings';
 const API_BASE = '/api';
 
 function buildQuery(params?: MediaListParams): string {
@@ -138,10 +139,16 @@ export const api = {
     request<MediaDetail>(`/media/from-search?externalId=${encodeURIComponent(externalId)}&type=${mediaType}`, {
       method: 'POST',
     }),
-  markWatched: (id: string, watched: boolean) =>
-    request<MediaDetail>(`/media/${id}/watched?watched=${watched}`, { method: 'PATCH' }),
-  updateWatchedSeasons: (id: string, watchedSeasons: number) =>
-    request<MediaDetail>(`/media/${id}/seasons?watchedSeasons=${watchedSeasons}`, { method: 'PATCH' }),
+  markWatched: (id: string, watched: boolean, ratings?: UserRatingsInput) =>
+    request<MediaDetail>(`/media/${id}/watched?watched=${watched}`, {
+      method: 'PATCH',
+      body: ratings ? JSON.stringify(ratings) : undefined,
+    }),
+  updateWatchedSeasons: (id: string, watchedSeasons: number, ratings?: UserRatingsInput) =>
+    request<MediaDetail>(`/media/${id}/seasons?watchedSeasons=${watchedSeasons}`, {
+      method: 'PATCH',
+      body: ratings ? JSON.stringify(ratings) : undefined,
+    }),
   refreshHistory: () => request<RefreshHistoryResult>('/history/refresh', { method: 'POST' }),
   refreshAll: () => request<RefreshAllResult>('/media/refresh-all', { method: 'POST' }),
   refreshAllWithProgress: (onProgress: (update: RefreshProgress) => void) =>

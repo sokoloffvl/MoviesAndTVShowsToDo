@@ -77,20 +77,39 @@ public class MediaController(MediaService mediaService) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/watched")]
-    public async Task<ActionResult<MediaDetailDto>> MarkWatched(Guid id, [FromQuery] bool watched = true, CancellationToken ct = default)
+    public async Task<ActionResult<MediaDetailDto>> MarkWatched(
+        Guid id,
+        [FromQuery] bool watched = true,
+        [FromBody] UserRatingsInput? ratings = null,
+        CancellationToken ct = default)
     {
-        var item = await mediaService.MarkWatchedAsync(id, watched, ct);
-        return item is null ? NotFound() : Ok(item);
+        try
+        {
+            var item = await mediaService.MarkWatchedAsync(id, watched, ratings, ct);
+            return item is null ? NotFound() : Ok(item);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPatch("{id:guid}/seasons")]
     public async Task<ActionResult<MediaDetailDto>> UpdateWatchedSeasons(
         Guid id,
         [FromQuery] int watchedSeasons,
+        [FromBody] UserRatingsInput? ratings = null,
         CancellationToken ct = default)
     {
-        var item = await mediaService.UpdateWatchedSeasonsAsync(id, watchedSeasons, ct);
-        return item is null ? NotFound() : Ok(item);
+        try
+        {
+            var item = await mediaService.UpdateWatchedSeasonsAsync(id, watchedSeasons, ratings, ct);
+            return item is null ? NotFound() : Ok(item);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPost("refresh-all")]

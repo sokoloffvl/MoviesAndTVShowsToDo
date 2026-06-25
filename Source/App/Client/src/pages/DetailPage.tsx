@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
+import { RateMediaModal } from '../components/RateMediaModal';
+import { UserRatingsDisplay } from '../components/UserRatingsDisplay';
 import type { MediaDetail } from '../types/media';
+import type { UserRatingsInput } from '../types/userRatings';
 import './DetailPage.css';
+
+type RateAction =
+  | { type: 'watched' }
+  | { type: 'seasons'; watchedSeasons: number };
 
 export function DetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -10,7 +17,7 @@ export function DetailPage() {
   const [item, setItem] = useState<MediaDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updatingSeasons, setUpdatingSeasons] = useState(false);
+  const [rateAction, setRateAction] = useState<RateAction | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -28,26 +35,39 @@ export function DetailPage() {
     void load();
   }, [load]);
 
-  const toggleWatched = async () => {
+  const handleMarkWatchedClick = () => {
     if (!item) return;
-    const updated = await api.markWatched(item.id, !item.isWatched);
-    setItem(updated);
-    if (updated.isWatched) {
-      navigate('/');
+    if (item.isWatched) {
+      void (async () => {
+        const updated = await api.markWatched(item.id, false);
+        setItem(updated);
+      })();
+      return;
     }
+    setRateAction({ type: 'watched' });
   };
 
-  const handleSeasonChange = async (watchedSeasons: number) => {
-    if (!item) return;
-    setUpdatingSeasons(true);
-    try {
-      const updated = await api.updateWatchedSeasons(item.id, watchedSeasons);
+  const handleSeasonSelect = (watchedSeasons: number) => {
+    if (!item || watchedSeasons === (item.watchedSeasons ?? 0)) return;
+    setRateAction({ type: 'seasons', watchedSeasons });
+  };
+
+  const submitRating = async (ratings: UserRatingsInput) => {
+    if (!item || !rateAction) return;
+
+    if (rateAction.type === 'watched') {
+      const updated = await api.markWatched(item.id, true, ratings);
       setItem(updated);
-      if (updated.isWatched) {
-        navigate('/');
-      }
-    } finally {
-      setUpdatingSeasons(false);
+      setRateAction(null);
+      navigate('/');
+      return;
+    }
+
+    const updated = await api.updateWatchedSeasons(item.id, rateAction.watchedSeasons, ratings);
+    setItem(updated);
+    setRateAction(null);
+    if (updated.isWatched) {
+      navigate('/');
     }
   };
 
@@ -97,9 +117,10 @@ export function DetailPage() {
                 ))}
               </div>
             )}
+            <UserRatingsDisplay ratings={item.userRatings} />
             <div className="detail-actions">
               {!isTvShow && (
-                <button type="button" onClick={() => void toggleWatched()}>
+                <button type="button" onClick={() => void handleMarkWatchedClick()}>
                   {item.isWatched ? 'Mark unwatched' : 'Mark watched'}
                 </button>
               )}
@@ -126,8 +147,7 @@ export function DetailPage() {
             <select
               id="watched-seasons"
               value={watchedSeasons}
-              disabled={updatingSeasons}
-              onChange={(e) => void handleSeasonChange(Number(e.target.value))}
+              onChange={(e) => handleSeasonSelect(Number(e.target.value))}
             >
               {Array.from({ length: totalSeasons + 1 }, (_, index) => (
                 <option key={index} value={index}>
@@ -191,6 +211,13 @@ export function DetailPage() {
           </div>
         </section>
       )}
+
+      <RateMediaModal
+        open={rateAction != null}
+        title={item.title}
+        onCancel={() => setRateAction(null)}
+        onSubmit={submitRating}
+      />
     </section>
   );
 }

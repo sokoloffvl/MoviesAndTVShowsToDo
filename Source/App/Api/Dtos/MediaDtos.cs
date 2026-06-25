@@ -2,6 +2,10 @@ using MoviesAndTVShowsToDo.Api.Models;
 
 namespace MoviesAndTVShowsToDo.Api.Dtos;
 
+public record UserRatingsDto(int? Story, int? Intensity, int? Style);
+
+public record UserRatingsInput(int Story, int Intensity, int Style);
+
 public record MediaSummaryDto(
     Guid Id,
     string Title,
@@ -15,6 +19,7 @@ public record MediaSummaryDto(
     IReadOnlyList<string> Genres,
     int? TotalSeasons,
     int? WatchedSeasons,
+    UserRatingsDto UserRatings,
     bool IsWatched);
 
 public record MediaDetailDto(
@@ -34,6 +39,7 @@ public record MediaDetailDto(
     IReadOnlyList<string> Genres,
     int? TotalSeasons,
     int? WatchedSeasons,
+    UserRatingsDto UserRatings,
     bool IsWatched,
     DateTimeOffset? WatchedAt,
     DateTimeOffset CreatedAt);

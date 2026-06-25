@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import type { MediaSummary } from '../types/media';
+import { UserRatingsDisplay } from './UserRatingsDisplay';
 import './MediaCard.css';
 
 interface MediaCardProps {
   item: MediaSummary;
-  onMarkWatched?: (id: string) => void;
+  onMarkWatched?: (item: MediaSummary) => void;
 }
 
 function seasonLabel(item: MediaSummary): string | null {
@@ -47,6 +48,7 @@ export function MediaCard({ item, onMarkWatched }: MediaCardProps) {
           </div>
           <h3>{item.title}</h3>
           {seasons && <p className="season-progress">{seasons}</p>}
+          <UserRatingsDisplay ratings={item.userRatings} compact />
           {item.genres.length > 0 && (
             <div className="genres">
               {item.genres.map((genre) => (
@@ -72,7 +74,7 @@ export function MediaCard({ item, onMarkWatched }: MediaCardProps) {
         <button
           type="button"
           className="btn-watched"
-          onClick={() => onMarkWatched(item.id)}
+          onClick={() => onMarkWatched(item)}
         >
           Mark watched
         </button>
