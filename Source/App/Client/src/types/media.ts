@@ -1,6 +1,13 @@
 import type { UserRatings } from './userRatings';
+import type { Recommendation } from './recommendation';
 
 export type { UserRatings };
+
+export interface RandomPickResult {
+  isRecommendation: boolean;
+  watchlistItem: MediaSummary | null;
+  recommendation: Recommendation | null;
+}
 
 export interface MediaSummary {
   id: string;

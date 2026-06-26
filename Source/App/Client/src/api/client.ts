@@ -3,6 +3,7 @@ import type {
   MediaListParams,
   MediaSearchResult,
   MediaSummary,
+  RandomPickResult,
   RefreshAllResult,
   RefreshHistoryResult,
   RefreshProgress,
@@ -140,14 +141,15 @@ async function readRefreshStream(
 
 export const api = {
   getGenres: () => request<string[]>('/media/genres'),
-  getRandomPick: async () => {
-    const response = await fetch(`${API_BASE}/media/random`);
+  getRandomPick: async (includeRecommendations = false) => {
+    const query = includeRecommendations ? '?includeRecommendations=true' : '';
+    const response = await fetch(`${API_BASE}/media/random${query}`);
     if (response.status === 404) return null;
     if (!response.ok) {
       const message = await response.text();
       throw new Error(message || response.statusText);
     }
-    return (await response.json()) as MediaSummary;
+    return (await response.json()) as RandomPickResult;
   },
   getWatchlist: (params?: MediaListParams) =>
     request<MediaSummary[]>(`/media${buildQuery(params)}`),

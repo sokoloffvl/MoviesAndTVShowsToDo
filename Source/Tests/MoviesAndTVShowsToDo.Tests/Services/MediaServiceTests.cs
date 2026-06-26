@@ -9,6 +9,7 @@ namespace MoviesAndTVShowsToDo.Tests.Services;
 public class MediaServiceTests
 {
     private FakeMediaRepository _repository = null!;
+    private FakeRecommendationRepository _recommendationRepository = null!;
     private FakeMetadataAggregator _metadata = null!;
     private MediaService _service = null!;
 
@@ -16,8 +17,9 @@ public class MediaServiceTests
     public void SetUp()
     {
         _repository = new FakeMediaRepository();
+        _recommendationRepository = new FakeRecommendationRepository();
         _metadata = new FakeMetadataAggregator();
-        _service = new MediaService(_repository, _metadata);
+        _service = new MediaService(_repository, _metadata, _recommendationRepository);
     }
 
     [Test]
@@ -586,6 +588,77 @@ public class MediaServiceTests
     }
 
     [Test]
+    public async Task GetRandomPickAsync_ReturnsNullWhenWatchlistAndRecommendationsEmpty()
+    {
+        var result = await _service.GetRandomPickAsync(includeRecommendations: true);
+
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task GetRandomPickAsync_CanPickFromRecommendationsWhenEnabled()
+    {
+        await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Inception",
+            Type = MediaType.Movie,
+            TmdbId = "27205",
+            IsWatched = true,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        _recommendationRepository.Items.Add(new RecommendationItem
+        {
+            Id = Guid.NewGuid(),
+            TmdbId = "155",
+            Type = MediaType.Movie,
+            Title = "Dark Knight",
+            RelevanceCount = 1,
+            GeneratedAt = DateTimeOffset.UtcNow
+        });
+
+        var result = await _service.GetRandomPickAsync(includeRecommendations: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result!.IsRecommendation, Is.True);
+            Assert.That(result.Recommendation!.Title, Is.EqualTo("Dark Knight"));
+        });
+    }
+
+    [Test]
+    public async Task GetRandomPickAsync_ExcludesRecommendationsAlreadyInLibrary()
+    {
+        await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Dark Knight",
+            Type = MediaType.Movie,
+            TmdbId = "155",
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        _recommendationRepository.Items.Add(new RecommendationItem
+        {
+            Id = Guid.NewGuid(),
+            TmdbId = "155",
+            Type = MediaType.Movie,
+            Title = "Dark Knight",
+            RelevanceCount = 1,
+            GeneratedAt = DateTimeOffset.UtcNow
+        });
+
+        var result = await _service.GetRandomPickAsync(includeRecommendations: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result!.IsRecommendation, Is.False);
+            Assert.That(result.WatchlistItem!.Title, Is.EqualTo("Dark Knight"));
+        });
+    }
+
+    [Test]
     public async Task GetRandomUnwatchedAsync_ReturnsNullWhenWatchlistEmpty()
     {
         var result = await _service.GetRandomUnwatchedAsync();
@@ -759,6 +832,21 @@ public class MediaServiceTests
 
             Items.Remove(item);
             return Task.FromResult(true);
+        }
+    }
+
+    private sealed class FakeRecommendationRepository : IRecommendationRepository
+    {
+        public List<RecommendationItem> Items { get; } = [];
+
+        public Task<IReadOnlyList<RecommendationItem>> GetAllAsync(RecommendationListQuery query, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<RecommendationItem>>(Items.ToList());
+
+        public Task ReplaceAllAsync(IReadOnlyList<RecommendationItem> items, CancellationToken ct = default)
+        {
+            Items.Clear();
+            Items.AddRange(items);
+            return Task.CompletedTask;
         }
     }
 

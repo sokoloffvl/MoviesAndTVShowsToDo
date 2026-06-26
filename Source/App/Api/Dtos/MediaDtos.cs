@@ -73,3 +73,8 @@ public record RefreshProgressDto(
     int Total,
     string? CurrentTitle,
     RefreshAllResultDto? Result = null);
+
+public record RandomPickResultDto(
+    bool IsRecommendation,
+    MediaSummaryDto? WatchlistItem,
+    RecommendationDto? Recommendation);

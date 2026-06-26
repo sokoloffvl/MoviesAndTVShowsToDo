@@ -34,9 +34,11 @@ public class MediaController(MediaService mediaService, RecommendationService re
         Ok(await mediaService.GetGenresAsync(ct));
 
     [HttpGet("random")]
-    public async Task<ActionResult<MediaSummaryDto>> GetRandom(CancellationToken ct)
+    public async Task<ActionResult<RandomPickResultDto>> GetRandom(
+        [FromQuery] bool includeRecommendations = false,
+        CancellationToken ct = default)
     {
-        var item = await mediaService.GetRandomUnwatchedAsync(ct);
+        var item = await mediaService.GetRandomPickAsync(includeRecommendations, ct);
         return item is null ? NotFound() : Ok(item);
     }
 

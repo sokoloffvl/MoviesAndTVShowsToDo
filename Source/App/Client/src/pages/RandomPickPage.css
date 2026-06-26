@@ -19,6 +19,23 @@
   color: #64748b;
 }
 
+.random-pick-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  color: #334155;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.random-pick-toggle input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #2563eb;
+}
+
 .btn-pick-again {
   padding: 0.65rem 1.25rem;
   border: none;

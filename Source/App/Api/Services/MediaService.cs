@@ -4,7 +4,10 @@ using MoviesAndTVShowsToDo.Api.Repositories;
 
 namespace MoviesAndTVShowsToDo.Api.Services;
 
-public class MediaService(IMediaRepository repository, IMetadataAggregator metadataAggregator)
+public class MediaService(
+    IMediaRepository repository,
+    IMetadataAggregator metadataAggregator,
+    IRecommendationRepository recommendationRepository)
 {
     public Task<IReadOnlyList<MediaSummaryDto>> GetWatchlistAsync(MediaListQuery query, CancellationToken ct = default) =>
         MapSummaries(repository.GetAllAsync(query with { Watched = false }, ct));
@@ -23,13 +26,34 @@ public class MediaService(IMediaRepository repository, IMetadataAggregator metad
             .ToList();
     }
 
-    public async Task<MediaSummaryDto?> GetRandomUnwatchedAsync(CancellationToken ct = default)
+    public async Task<RandomPickResultDto?> GetRandomPickAsync(
+        bool includeRecommendations = false,
+        CancellationToken ct = default)
     {
-        var items = await repository.GetAllAsync(new MediaListQuery(Watched: false), ct);
-        if (items.Count == 0)
+        var pool = new List<RandomPickResultDto>();
+
+        var watchlist = await repository.GetAllAsync(new MediaListQuery(Watched: false), ct);
+        pool.AddRange(watchlist.Select(item => new RandomPickResultDto(false, ToSummaryDto(item), null)));
+
+        if (includeRecommendations)
+        {
+            var libraryTmdbKeys = await GetLibraryTmdbKeysAsync(ct);
+            var recommendations = await recommendationRepository.GetAllAsync(new RecommendationListQuery(), ct);
+            pool.AddRange(recommendations
+                .Where(item => !libraryTmdbKeys.Contains(TmdbKey(item.Type, item.TmdbId)))
+                .Select(item => new RandomPickResultDto(true, null, ToRecommendationDto(item, libraryTmdbKeys))));
+        }
+
+        if (pool.Count == 0)
             return null;
 
-        return ToSummaryDto(items[Random.Shared.Next(items.Count)]);
+        return pool[Random.Shared.Next(pool.Count)];
+    }
+
+    public async Task<MediaSummaryDto?> GetRandomUnwatchedAsync(CancellationToken ct = default)
+    {
+        var result = await GetRandomPickAsync(false, ct);
+        return result?.WatchlistItem;
     }
 
     public async Task<MediaDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default)
@@ -291,22 +315,6 @@ public class MediaService(IMediaRepository repository, IMetadataAggregator metad
         return items.Select(ToSummaryDto).ToList();
     }
 
-    private static MediaSummaryDto ToSummaryDto(MediaItem item) => new(
-        item.Id,
-        item.Title,
-        item.Type.ToString(),
-        item.Year,
-        item.PosterUrl,
-        item.ImdbRating,
-        item.RottenTomatoesRating,
-        item.Description,
-        item.WatchSources.Select(w => w.Provider.ToDisplayName()).Distinct().ToList(),
-        item.Genres,
-        item.TotalSeasons,
-        item.WatchedSeasons,
-        ToUserRatingsDto(item),
-        item.IsWatched);
-
     private static MediaDetailDto ToDetailDto(MediaItem item) => new(
         item.Id,
         item.Title,
@@ -328,4 +336,49 @@ public class MediaService(IMediaRepository repository, IMetadataAggregator metad
         item.IsWatched,
         item.WatchedAt,
         item.CreatedAt);
+
+    private async Task<HashSet<string>> GetLibraryTmdbKeysAsync(CancellationToken ct)
+    {
+        var library = await repository.GetAllAsync(new MediaListQuery(), ct);
+        return library
+            .Where(i => !string.IsNullOrWhiteSpace(i.TmdbId))
+            .Select(i => TmdbKey(i.Type, i.TmdbId!))
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
+    private static string TmdbKey(MediaType type, string tmdbId) => $"{type}:{tmdbId}";
+
+    private static MediaSummaryDto ToSummaryDto(MediaItem item) => new(
+        item.Id,
+        item.Title,
+        item.Type.ToString(),
+        item.Year,
+        item.PosterUrl,
+        item.ImdbRating,
+        item.RottenTomatoesRating,
+        item.Description,
+        item.WatchSources.Select(w => w.Provider.ToDisplayName()).Distinct().ToList(),
+        item.Genres,
+        item.TotalSeasons,
+        item.WatchedSeasons,
+        ToUserRatingsDto(item),
+        item.IsWatched);
+
+    private static RecommendationDto ToRecommendationDto(
+        RecommendationItem item,
+        HashSet<string> libraryTmdbKeys) => new(
+        item.Id,
+        item.TmdbId,
+        item.Type.ToString(),
+        item.Title,
+        item.Year,
+        item.PosterUrl,
+        item.ImdbRating,
+        item.Description,
+        item.Genres,
+        item.WatchSources.Select(w => w.Provider.ToDisplayName()).Distinct().ToList(),
+        item.RelevanceCount,
+        item.SimilarTo.Select(s => new SimilarSourceDto(s.SourceMediaId, s.SourceTitle)).ToList(),
+        libraryTmdbKeys.Contains(TmdbKey(item.Type, item.TmdbId)),
+        item.GeneratedAt);
 }
