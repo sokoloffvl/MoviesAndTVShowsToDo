@@ -1,0 +1,107 @@
+.pick-watch-page .page-header {
+  margin-bottom: 1.5rem;
+}
+
+.pick-watch-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pick-watch-page h1 {
+  margin: 0 0 0.25rem;
+}
+
+.pick-watch-page .page-header p {
+  margin: 0;
+  color: #64748b;
+}
+
+.btn-create-round {
+  padding: 0.65rem 1.25rem;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.share-message {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  word-break: break-all;
+}
+
+.rounds-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.round-card {
+  display: block;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.round-card:hover {
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+}
+
+.round-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.round-status {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+
+.round-status.active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.round-status.finished {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.round-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.round-participants {
+  margin: 0.5rem 0 0;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.pick-watch-page .empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+  background: #fff;
+  border-radius: 16px;
+}

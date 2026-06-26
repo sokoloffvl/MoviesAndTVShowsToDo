@@ -14,5 +14,9 @@ public static class MartenStoreConfig
         options.Schema.For<RecommendationItem>()
             .Identity(x => x.Id)
             .Index(x => x.RelevanceCount);
+
+        options.Schema.For<WatchRound>()
+            .Identity(x => x.Id)
+            .Index(x => x.CreatedAt);
     }
 }

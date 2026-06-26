@@ -14,6 +14,13 @@ import type {
   RecommendationListParams,
   RefreshSourceRecommendationsResult,
 } from '../types/recommendation';
+import type {
+  CreateWatchRoundRequest,
+  CreateWatchRoundResult,
+  JoinWatchRoundResult,
+  WatchRoundDetail,
+  WatchRoundSummary,
+} from '../types/watchRound';
 import type { UserRatingsInput } from '../types/userRatings';
 
 const API_BASE = '/api';
@@ -193,4 +200,23 @@ export const api = {
   addRecommendationToWatchlist: (id: string) =>
     request<MediaDetail>(`/recommendations/${id}/add-to-watchlist`, { method: 'POST' }),
   deleteMedia: (id: string) => request<void>(`/media/${id}`, { method: 'DELETE' }),
+  getWatchRounds: () => request<WatchRoundSummary[]>('/watch-rounds'),
+  getWatchRound: (id: string) => request<WatchRoundDetail>(`/watch-rounds/${id}`),
+  createWatchRound: (body: CreateWatchRoundRequest) =>
+    request<CreateWatchRoundResult>('/watch-rounds', { method: 'POST', body: JSON.stringify(body) }),
+  joinWatchRound: (id: string, name: string) =>
+    request<JoinWatchRoundResult>(`/watch-rounds/${id}/join`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  voteWatchRound: (id: string, participantId: string, queueItemId: string, approved: boolean) =>
+    request<WatchRoundDetail>(`/watch-rounds/${id}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ participantId, queueItemId, approved }),
+    }),
+  finishWatchRound: (id: string, participantId: string) =>
+    request<WatchRoundDetail>(`/watch-rounds/${id}/finish`, {
+      method: 'POST',
+      body: JSON.stringify({ participantId }),
+    }),
 };
