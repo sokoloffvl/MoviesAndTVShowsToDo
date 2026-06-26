@@ -25,9 +25,13 @@ builder.Services.AddMarten(options =>
 .ApplyAllDatabaseChangesOnStartup();
 
 builder.Services.AddScoped<IMediaRepository, MartenMediaRepository>();
+builder.Services.AddScoped<IRecommendationRepository, MartenRecommendationRepository>();
 builder.Services.AddScoped<MediaService>();
+builder.Services.AddScoped<IMediaWatchlistGateway, MediaWatchlistGateway>();
+builder.Services.AddScoped<RecommendationService>();
 builder.Services.AddScoped<IMetadataAggregator, MetadataAggregator>();
 builder.Services.AddScoped<IMetadataProvider, TmdbMetadataProvider>();
+builder.Services.AddScoped<ITmdbRecommendationClient>(sp => sp.GetRequiredService<TmdbMetadataProvider>());
 builder.Services.AddScoped<IRatingEnricher, OmdbRatingEnricher>();
 builder.Services.AddScoped<TmdbMetadataProvider>();
 builder.Services.AddScoped<OmdbRatingEnricher>();

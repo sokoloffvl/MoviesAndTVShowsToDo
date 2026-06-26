@@ -10,6 +10,15 @@ public record MediaSearchHit(
     string? PosterUrl,
     double? Rating);
 
+public record MediaRecommendationHit(
+    string ExternalId,
+    string Title,
+    MediaType Type,
+    int? Year,
+    string? PosterUrl,
+    double? Rating,
+    string? Description);
+
 public class MediaMetadata
 {
     public string Title { get; set; } = string.Empty;

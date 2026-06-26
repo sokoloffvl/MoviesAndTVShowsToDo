@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { RateMediaModal } from '../components/RateMediaModal';
+import { RecommendationCard } from '../components/RecommendationCard';
 import { UserRatingsDisplay } from '../components/UserRatingsDisplay';
 import type { MediaDetail } from '../types/media';
+import type { Recommendation } from '../types/recommendation';
 import type { UserRatingsInput } from '../types/userRatings';
 import './DetailPage.css';
 
@@ -15,9 +17,26 @@ export function DetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [item, setItem] = useState<MediaDetail | null>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
+  const [refreshingRecommendations, setRefreshingRecommendations] = useState(false);
+  const [addingRecommendationId, setAddingRecommendationId] = useState<string | null>(null);
+  const [recommendationsMessage, setRecommendationsMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rateAction, setRateAction] = useState<RateAction | null>(null);
+
+  const loadRecommendations = useCallback(async () => {
+    if (!id) return;
+    setRecommendationsLoading(true);
+    try {
+      setRecommendations(await api.getMediaRecommendations(id));
+    } catch {
+      setRecommendations([]);
+    } finally {
+      setRecommendationsLoading(false);
+    }
+  }, [id]);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -33,7 +52,45 @@ export function DetailPage() {
 
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadRecommendations();
+  }, [load, loadRecommendations]);
+
+  const handleRefreshRecommendations = async () => {
+    if (!id) return;
+    setRefreshingRecommendations(true);
+    setRecommendationsMessage(null);
+    setError(null);
+    try {
+      const result = await api.refreshMediaRecommendations(id);
+      setRecommendationsMessage(
+        result.addedCount > 0
+          ? `Added ${result.addedCount} new recommendation${result.addedCount === 1 ? '' : 's'}.`
+          : 'No new recommendations found.',
+      );
+      await loadRecommendations();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to refresh recommendations');
+    } finally {
+      setRefreshingRecommendations(false);
+    }
+  };
+
+  const handleAddRecommendationToWatchlist = async (recommendation: Recommendation) => {
+    setAddingRecommendationId(recommendation.id);
+    setError(null);
+    try {
+      await api.addRecommendationToWatchlist(recommendation.id);
+      setRecommendations((current) =>
+        current.map((entry) =>
+          entry.id === recommendation.id ? { ...entry, inWatchlist: true } : entry,
+        ),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add to watchlist');
+    } finally {
+      setAddingRecommendationId(null);
+    }
+  };
 
   const handleMarkWatchedClick = () => {
     if (!item) return;
@@ -211,6 +268,44 @@ export function DetailPage() {
           </div>
         </section>
       )}
+
+      <section className="detail-section detail-recommendations">
+        <div className="detail-recommendations-header">
+          <h2>Recommendations</h2>
+          <button
+            type="button"
+            className="btn-refresh-recommendations"
+            onClick={() => void handleRefreshRecommendations()}
+            disabled={refreshingRecommendations}
+          >
+            {refreshingRecommendations ? 'Refreshing…' : 'Refresh recommendations'}
+          </button>
+        </div>
+        {recommendationsMessage && (
+          <div className="recommendations-message" role="status">
+            {recommendationsMessage}
+          </div>
+        )}
+        {recommendationsLoading ? (
+          <p className="detail-muted">Loading recommendations…</p>
+        ) : recommendations.length === 0 ? (
+          <p className="detail-muted">
+            No recommendations yet. Click &quot;Refresh recommendations&quot; to fetch suggestions from TMDB.
+          </p>
+        ) : (
+          <div className="detail-recommendations-grid">
+            {recommendations.map((recommendation) => (
+              <RecommendationCard
+                key={recommendation.id}
+                item={recommendation}
+                hideSimilarTo
+                adding={addingRecommendationId === recommendation.id}
+                onAddToWatchlist={(entry) => void handleAddRecommendationToWatchlist(entry)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
       <RateMediaModal
         open={rateAction != null}

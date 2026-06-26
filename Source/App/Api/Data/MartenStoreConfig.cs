@@ -10,5 +10,9 @@ public static class MartenStoreConfig
         options.Schema.For<MediaItem>()
             .Identity(x => x.Id)
             .Index(x => x.IsWatched);
+
+        options.Schema.For<RecommendationItem>()
+            .Identity(x => x.Id)
+            .Index(x => x.RelevanceCount);
     }
 }

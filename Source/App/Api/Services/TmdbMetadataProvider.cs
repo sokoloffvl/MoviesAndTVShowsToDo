@@ -13,7 +13,8 @@ public class TmdbOptions
     public string ImageBaseUrl { get; set; } = "https://image.tmdb.org/t/p/w500";
 }
 
-public class TmdbMetadataProvider(HttpClient http, IOptions<TmdbOptions> options) : IMetadataProvider
+public class TmdbMetadataProvider(HttpClient http, IOptions<TmdbOptions> options)
+    : IMetadataProvider, ITmdbRecommendationClient
 {
     private readonly TmdbOptions _options = options.Value;
 
@@ -51,6 +52,34 @@ public class TmdbMetadataProvider(HttpClient http, IOptions<TmdbOptions> options
             return null;
 
         return MapDetails(details, type, tmdbId);
+    }
+
+    public async Task<IReadOnlyList<MediaRecommendationHit>> GetRecommendationsAsync(
+        string externalId,
+        MediaType type,
+        int limit = 10,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(_options.ApiKey) || !int.TryParse(externalId, out _))
+            return [];
+
+        var segment = type == MediaType.TvShow ? "tv" : "movie";
+        var url = $"{_options.BaseUrl}/{segment}/{externalId}/recommendations?api_key={_options.ApiKey}";
+        var response = await http.GetFromJsonAsync<TmdbRecommendationsResponse>(url, ct);
+        if (response?.Results is null)
+            return [];
+
+        return response.Results
+            .Take(limit)
+            .Select(r => new MediaRecommendationHit(
+                r.Id.ToString(),
+                r.Title ?? r.Name ?? "Unknown",
+                type,
+                ParseYear(r.ReleaseDate ?? r.FirstAirDate),
+                BuildImageUrl(r.PosterPath),
+                r.VoteAverage > 0 ? r.VoteAverage : null,
+                r.Overview))
+            .ToList();
     }
 
     public virtual async Task<MediaMetadata?> GetByImdbIdAsync(string imdbId, CancellationToken ct = default)
@@ -136,6 +165,39 @@ public class TmdbMetadataProvider(HttpClient http, IOptions<TmdbOptions> options
     {
         [JsonPropertyName("results")]
         public List<TmdbSearchResult>? Results { get; set; }
+    }
+
+    private sealed class TmdbRecommendationsResponse
+    {
+        [JsonPropertyName("results")]
+        public List<TmdbRecommendationResult>? Results { get; set; }
+    }
+
+    private sealed class TmdbRecommendationResult
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("title")]
+        public string? Title { get; set; }
+
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
+        [JsonPropertyName("overview")]
+        public string? Overview { get; set; }
+
+        [JsonPropertyName("release_date")]
+        public string? ReleaseDate { get; set; }
+
+        [JsonPropertyName("first_air_date")]
+        public string? FirstAirDate { get; set; }
+
+        [JsonPropertyName("poster_path")]
+        public string? PosterPath { get; set; }
+
+        [JsonPropertyName("vote_average")]
+        public double VoteAverage { get; set; }
     }
 
     private sealed class TmdbSearchResult

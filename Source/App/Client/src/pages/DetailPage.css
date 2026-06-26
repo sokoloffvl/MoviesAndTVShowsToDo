@@ -180,6 +180,54 @@
   font-size: 0.8rem;
 }
 
+.detail-recommendations-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.detail-recommendations-header h2 {
+  margin: 0;
+}
+
+.btn-refresh-recommendations {
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-refresh-recommendations:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.detail-muted {
+  margin: 0;
+  color: #64748b;
+}
+
+.recommendations-message {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+}
+
+.detail-recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
 @media (max-width: 640px) {
   .detail-hero-overlay {
     flex-direction: column;

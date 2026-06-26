@@ -7,8 +7,33 @@ import type {
   RefreshHistoryResult,
   RefreshProgress,
 } from '../types/media';
+import type {
+  GenerateRecommendationsResult,
+  Recommendation,
+  RecommendationListParams,
+  RefreshSourceRecommendationsResult,
+} from '../types/recommendation';
 import type { UserRatingsInput } from '../types/userRatings';
+
 const API_BASE = '/api';
+
+function buildRecommendationQuery(params?: RecommendationListParams): string {
+  if (!params) return '';
+  const search = new URLSearchParams();
+  if (params.type) search.set('type', params.type);
+  if (params.provider) search.set('provider', params.provider);
+  if (params.genre) search.set('genre', params.genre);
+  if (params.search?.trim()) search.set('search', params.search.trim());
+  if (params.minRating != null && params.minRating > 0) {
+    search.set('minRating', String(params.minRating));
+  }
+  if (params.sortBy) search.set('sortBy', params.sortBy);
+  if (params.sortDescending != null) {
+    search.set('sortDescending', String(params.sortDescending));
+  }
+  const query = search.toString();
+  return query ? `?${query}` : '';
+}
 
 function buildQuery(params?: MediaListParams): string {
   if (!params) return '';
@@ -129,6 +154,12 @@ export const api = {
   getHistory: (params?: MediaListParams) =>
     request<MediaSummary[]>(`/history${buildQuery(params)}`),
   getMedia: (id: string) => request<MediaDetail>(`/media/${id}`),
+  getMediaRecommendations: (mediaId: string) =>
+    request<Recommendation[]>(`/media/${mediaId}/recommendations`),
+  refreshMediaRecommendations: (mediaId: string) =>
+    request<RefreshSourceRecommendationsResult>(`/media/${mediaId}/recommendations/refresh`, {
+      method: 'POST',
+    }),
   searchMedia: (q: string) => request<MediaSearchResult[]>(`/media/search?q=${encodeURIComponent(q)}`),
   addMedia: (query: string) =>
     request<MediaDetail>('/media', {
@@ -153,5 +184,11 @@ export const api = {
   refreshAll: () => request<RefreshAllResult>('/media/refresh-all', { method: 'POST' }),
   refreshAllWithProgress: (onProgress: (update: RefreshProgress) => void) =>
     readRefreshStream(onProgress),
+  getRecommendations: (params?: RecommendationListParams) =>
+    request<Recommendation[]>(`/recommendations${buildRecommendationQuery(params)}`),
+  generateRecommendations: () =>
+    request<GenerateRecommendationsResult>('/recommendations/generate', { method: 'POST' }),
+  addRecommendationToWatchlist: (id: string) =>
+    request<MediaDetail>(`/recommendations/${id}/add-to-watchlist`, { method: 'POST' }),
   deleteMedia: (id: string) => request<void>(`/media/${id}`, { method: 'DELETE' }),
 };

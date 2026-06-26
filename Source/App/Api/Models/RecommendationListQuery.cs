@@ -1,23 +1,19 @@
 namespace MoviesAndTVShowsToDo.Api.Models;
 
-public enum MediaSortField
+public enum RecommendationSortField
 {
-    CreatedAt,
+    Relevance,
+    GeneratedAt,
     Year,
     ImdbRating,
-    RottenTomatoesRating,
-    Title,
-    SeasonsRemaining,
-    Relevance
+    Title
 }
 
-public record MediaListQuery(
-    bool? Watched = null,
+public record RecommendationListQuery(
     MediaType? Type = null,
     StreamingProvider? Provider = null,
     double? MinImdbRating = null,
-    MediaSortField SortBy = MediaSortField.CreatedAt,
+    RecommendationSortField SortBy = RecommendationSortField.Relevance,
     bool SortDescending = true,
     string? Genre = null,
-    bool? InProgressOnly = null,
     string? Search = null);

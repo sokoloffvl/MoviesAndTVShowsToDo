@@ -64,6 +64,7 @@ export function Layout() {
           </NavLink>
           <NavLink to="/add">Add</NavLink>
           <NavLink to="/random">Random pick</NavLink>
+          <NavLink to="/recommendations">Recommendations</NavLink>
           <NavLink to="/history">History</NavLink>
         </nav>
         <div className="refresh-all-wrap">

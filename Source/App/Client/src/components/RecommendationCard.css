@@ -1,0 +1,131 @@
+.recommendation-card {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.relevance-badge {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 2;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.recommendation-card-poster {
+  aspect-ratio: 2 / 3;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.recommendation-card-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recommendation-card-placeholder {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #64748b;
+}
+
+.recommendation-card-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.recommendation-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.recommendation-card-body h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.recommendation-description {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.similar-to {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.similar-to strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #334155;
+}
+
+.similar-to ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.similar-to li {
+  margin-bottom: 0.15rem;
+}
+
+.btn-add-watchlist {
+  margin-top: auto;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-add-watchlist:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-add-watchlist:not(:disabled):hover {
+  background: #1e293b;
+}
+
+.recommendation-card .year {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.recommendation-card .rating.imdb {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #92400e;
+}

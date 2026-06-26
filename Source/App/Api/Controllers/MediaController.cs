@@ -8,7 +8,7 @@ namespace MoviesAndTVShowsToDo.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class MediaController(MediaService mediaService) : ControllerBase
+public class MediaController(MediaService mediaService, RecommendationService recommendationService) : ControllerBase
 {
     private static readonly JsonSerializerOptions StreamJsonOptions = new()
     {
@@ -38,6 +38,27 @@ public class MediaController(MediaService mediaService) : ControllerBase
     {
         var item = await mediaService.GetRandomUnwatchedAsync(ct);
         return item is null ? NotFound() : Ok(item);
+    }
+
+    [HttpGet("{id:guid}/recommendations")]
+    public async Task<ActionResult<IReadOnlyList<RecommendationDto>>> GetRecommendations(Guid id, CancellationToken ct)
+    {
+        var item = await mediaService.GetDetailAsync(id, ct);
+        if (item is null)
+            return NotFound();
+
+        return Ok(await recommendationService.GetForSourceAsync(id, ct));
+    }
+
+    [HttpPost("{id:guid}/recommendations/refresh")]
+    public async Task<ActionResult<RefreshSourceRecommendationsResultDto>> RefreshRecommendations(Guid id, CancellationToken ct)
+    {
+        var item = await mediaService.GetDetailAsync(id, ct);
+        if (item is null)
+            return NotFound();
+
+        var result = await recommendationService.RefreshForSourceAsync(id, ct);
+        return result is null ? BadRequest("This title has no TMDB id and cannot fetch recommendations.") : Ok(result);
     }
 
     [HttpGet("{id:guid}")]

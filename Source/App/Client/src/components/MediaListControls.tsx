@@ -8,9 +8,16 @@ import './MediaListControls.css';
 interface MediaListControlsProps {
   params: MediaListParams;
   onChange: (params: MediaListParams) => void;
+  hideTvProgress?: boolean;
+  sortOptions?: { value: SortField; label: string }[];
 }
 
-export function MediaListControls({ params, onChange }: MediaListControlsProps) {
+export function MediaListControls({
+  params,
+  onChange,
+  hideTvProgress = false,
+  sortOptions = SORT_OPTIONS,
+}: MediaListControlsProps) {
   const [genres, setGenres] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState(params.search ?? '');
   const update = (patch: Partial<MediaListParams>) => onChange({ ...params, ...patch });
@@ -64,16 +71,18 @@ export function MediaListControls({ params, onChange }: MediaListControlsProps) 
         </select>
       </label>
 
-      <label>
-        TV progress
-        <select
-          value={params.tvProgress ?? ''}
-          onChange={(e) => update({ tvProgress: e.target.value as TvProgressFilter })}
-        >
-          <option value="">All</option>
-          <option value="inProgress">In progress</option>
-        </select>
-      </label>
+      {!hideTvProgress && (
+        <label>
+          TV progress
+          <select
+            value={params.tvProgress ?? ''}
+            onChange={(e) => update({ tvProgress: e.target.value as TvProgressFilter })}
+          >
+            <option value="">All</option>
+            <option value="inProgress">In progress</option>
+          </select>
+        </label>
+      )}
 
       <label>
         Genre
@@ -128,7 +137,7 @@ export function MediaListControls({ params, onChange }: MediaListControlsProps) 
           value={params.sortBy ?? 'CreatedAt'}
           onChange={(e) => update({ sortBy: e.target.value as SortField })}
         >
-          {SORT_OPTIONS.map((option) => (
+          {sortOptions.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>

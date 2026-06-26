@@ -76,7 +76,9 @@ export type SortField =
   | 'ImdbRating'
   | 'RottenTomatoesRating'
   | 'Title'
-  | 'SeasonsRemaining';
+  | 'SeasonsRemaining'
+  | 'Relevance'
+  | 'GeneratedAt';
 
 export type TvProgressFilter = '' | 'inProgress';
 
@@ -120,4 +122,12 @@ export const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'RottenTomatoesRating', label: 'Rotten Tomatoes' },
   { value: 'Title', label: 'Title (A–Z)' },
   { value: 'SeasonsRemaining', label: 'Seasons left' },
+];
+
+export const RECOMMENDATION_SORT_OPTIONS: { value: SortField; label: string }[] = [
+  { value: 'Relevance', label: 'Relevance' },
+  { value: 'GeneratedAt', label: 'Date generated' },
+  { value: 'Year', label: 'Year' },
+  { value: 'ImdbRating', label: 'IMDb rating' },
+  { value: 'Title', label: 'Title (A–Z)' },
 ];

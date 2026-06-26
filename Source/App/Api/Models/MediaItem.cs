@@ -24,5 +24,6 @@ public class MediaItem
     public int? StyleRating { get; set; }
     public bool IsWatched { get; set; }
     public DateTimeOffset? WatchedAt { get; set; }
+    public DateTimeOffset? LastUsedForRecommendationsAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
