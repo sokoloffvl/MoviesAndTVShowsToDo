@@ -12,6 +12,7 @@ public class MediaServiceTests
     private FakeRecommendationRepository _recommendationRepository = null!;
     private FakeTmdbRecommendationClient _tmdbClient = null!;
     private FakeMetadataAggregator _metadata = null!;
+    private RecommendationRefreshService _refreshService = null!;
     private MediaService _service = null!;
 
     [SetUp]
@@ -21,7 +22,7 @@ public class MediaServiceTests
         _recommendationRepository = new FakeRecommendationRepository();
         _tmdbClient = new FakeTmdbRecommendationClient();
         _metadata = new FakeMetadataAggregator();
-        var refreshService = new RecommendationRefreshService(
+        _refreshService = new RecommendationRefreshService(
             _repository,
             _recommendationRepository,
             _tmdbClient);
@@ -29,7 +30,8 @@ public class MediaServiceTests
             _repository,
             _metadata,
             _recommendationRepository,
-            new SynchronousRecommendationRefreshQueue(refreshService));
+            new SynchronousRecommendationRefreshQueue(_refreshService),
+            _refreshService);
     }
 
     [Test]
@@ -37,11 +39,16 @@ public class MediaServiceTests
     {
         _metadata.NextResolve = SampleMetadata("Inception");
         var recordingQueue = new RecordingRecommendationRefreshQueue();
+        var refreshService = new RecommendationRefreshService(
+            _repository,
+            _recommendationRepository,
+            _tmdbClient);
         var service = new MediaService(
             _repository,
             _metadata,
             _recommendationRepository,
-            recordingQueue);
+            recordingQueue,
+            refreshService);
 
         var result = await service.AddFromQueryAsync("Inception");
 
@@ -103,6 +110,57 @@ public class MediaServiceTests
             Assert.That(result!.TotalSeasons, Is.EqualTo(5));
             Assert.That(result.WatchedSeasons, Is.EqualTo(0));
             Assert.That(result.IsWatched, Is.False);
+        });
+    }
+
+    [Test]
+    public async Task GetSearchPreviewAsync_ReturnsMetadataWithoutSaving()
+    {
+        _metadata.NextExternal = SampleMetadata("Inception");
+
+        var preview = await _service.GetSearchPreviewAsync("27205", MediaType.Movie);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(preview, Is.Not.Null);
+            Assert.That(preview!.Title, Is.EqualTo("Inception"));
+            Assert.That(preview.Genres, Is.EqualTo(["Action", "Science Fiction", "Adventure"]));
+            Assert.That(_repository.Items, Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task DeleteAsync_RemovesRecommendationsSourcedFromDeletedItem()
+    {
+        var sourceId = Guid.NewGuid();
+        await _repository.AddAsync(new MediaItem
+        {
+            Id = sourceId,
+            Title = "Inception",
+            Type = MediaType.Movie,
+            TmdbId = "27205",
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        _recommendationRepository.Items.Add(new RecommendationItem
+        {
+            Id = Guid.NewGuid(),
+            TmdbId = "155",
+            Type = MediaType.Movie,
+            Title = "The Dark Knight",
+            RelevanceCount = 1,
+            SimilarTo =
+            [
+                new SimilarSource { SourceMediaId = sourceId, SourceTitle = "Inception" }
+            ]
+        });
+
+        var deleted = await _service.DeleteAsync(sourceId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(deleted, Is.True);
+            Assert.That(_repository.Items, Is.Empty);
+            Assert.That(_recommendationRepository.Items, Is.Empty);
         });
     }
 

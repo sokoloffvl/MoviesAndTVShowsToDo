@@ -1,11 +1,16 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import { api } from '../api/client';
-import type { MediaSearchResult } from '../types/media';
+import { AddMediaPreviewModal } from '../components/AddMediaPreviewModal';
+import type { MediaSearchPreview, MediaSearchResult } from '../types/media';
 import './AddMediaPage.css';
 
 export function AddMediaPage() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MediaSearchResult[]>([]);
+  const [selectedHit, setSelectedHit] = useState<MediaSearchResult | null>(null);
+  const [preview, setPreview] = useState<MediaSearchPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,9 +22,42 @@ export function AddMediaPage() {
     return () => window.clearTimeout(timer);
   }, [notification]);
 
+  useEffect(() => {
+    if (!selectedHit) {
+      setPreview(null);
+      setPreviewError(null);
+      setPreviewLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setPreview(null);
+    setPreviewError(null);
+    setPreviewLoading(true);
+
+    void api
+      .getSearchPreview(selectedHit.externalId, selectedHit.mediaType)
+      .then((details) => {
+        if (!cancelled) setPreview(details);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setPreviewError(err instanceof Error ? err.message : 'Could not load details');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedHit]);
+
   const showAdded = (title: string) => {
     setNotification(`${title} added`);
     setResults([]);
+    setSelectedHit(null);
   };
 
   const handleSearch = async (event: FormEvent) => {
@@ -28,6 +66,7 @@ export function AddMediaPage() {
 
     setSearching(true);
     setError(null);
+    setSelectedHit(null);
     try {
       const hits = await api.searchMedia(query.trim());
       setResults(hits);
@@ -54,11 +93,21 @@ export function AddMediaPage() {
     }
   };
 
-  const handleSelect = async (hit: MediaSearchResult) => {
+  const handleOpenPreview = (hit: MediaSearchResult) => {
+    setSelectedHit(hit);
+  };
+
+  const handleClosePreview = () => {
+    setSelectedHit(null);
+  };
+
+  const handleAddFromPreview = async () => {
+    if (!selectedHit) return;
+
     setAdding(true);
     setError(null);
     try {
-      const item = await api.addFromSearch(hit.externalId, hit.mediaType);
+      const item = await api.addFromSearch(selectedHit.externalId, selectedHit.mediaType);
       showAdded(item.title);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not add media');
@@ -93,7 +142,7 @@ export function AddMediaPage() {
           disabled={adding || !query.trim()}
           onClick={() => void handleQuickAdd()}
         >
-          {adding ? 'Adding…' : 'Add best match'}
+          {adding && !selectedHit ? 'Adding…' : 'Add best match'}
         </button>
       </form>
 
@@ -103,7 +152,7 @@ export function AddMediaPage() {
         <ul className="search-results">
           {results.map((hit) => (
             <li key={`${hit.mediaType}-${hit.externalId}`}>
-              <button type="button" onClick={() => void handleSelect(hit)} disabled={adding}>
+              <button type="button" onClick={() => handleOpenPreview(hit)} disabled={adding}>
                 {hit.posterUrl && <img src={hit.posterUrl} alt="" />}
                 <div>
                   <strong>{hit.title}</strong>
@@ -116,6 +165,18 @@ export function AddMediaPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {selectedHit && (
+        <AddMediaPreviewModal
+          hit={selectedHit}
+          preview={preview}
+          loading={previewLoading}
+          error={previewError}
+          adding={adding}
+          onClose={handleClosePreview}
+          onAdd={handleAddFromPreview}
+        />
       )}
     </section>
   );

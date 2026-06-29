@@ -1,0 +1,151 @@
+.add-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 100;
+}
+
+.add-preview-modal {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: min(90vh, 820px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+}
+
+.add-preview-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.add-preview-body {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.add-preview-poster img {
+  width: 100%;
+  border-radius: 10px;
+  display: block;
+}
+
+.add-preview-poster-placeholder {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.add-preview-details h2 {
+  margin: 0 0 0.75rem;
+  padding-right: 2rem;
+  font-size: 1.35rem;
+}
+
+.add-preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.add-preview-meta span:not(:last-child)::after {
+  content: '·';
+  margin-left: 0.5rem;
+  color: #cbd5e1;
+}
+
+.add-preview-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.add-preview-genres span {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.add-preview-loading {
+  margin: 0 0 0.75rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.add-preview-error {
+  margin: 0 0 0.75rem;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.add-preview-description {
+  margin: 0;
+  color: #334155;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.add-preview-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.add-preview-actions button {
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-preview-actions .btn-secondary {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.add-preview-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .add-preview-body {
+    grid-template-columns: 1fr;
+  }
+
+  .add-preview-poster {
+    max-width: 160px;
+  }
+}

@@ -1,6 +1,7 @@
 import type {
   MediaDetail,
   MediaListParams,
+  MediaSearchPreview,
   MediaSearchResult,
   MediaSummary,
   RandomPickResult,
@@ -170,6 +171,10 @@ export const api = {
       method: 'POST',
     }),
   searchMedia: (q: string) => request<MediaSearchResult[]>(`/media/search?q=${encodeURIComponent(q)}`),
+  getSearchPreview: (externalId: string, mediaType: string) =>
+    request<MediaSearchPreview>(
+      `/media/search/preview?externalId=${encodeURIComponent(externalId)}&type=${encodeURIComponent(mediaType)}`,
+    ),
   addMedia: (query: string) =>
     request<MediaDetail>('/media', {
       method: 'POST',

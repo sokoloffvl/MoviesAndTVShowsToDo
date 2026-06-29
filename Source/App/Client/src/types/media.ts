@@ -56,6 +56,19 @@ export interface MediaSearchResult {
   rating: number | null;
 }
 
+export interface MediaSearchPreview {
+  externalId: string;
+  title: string;
+  mediaType: string;
+  year: number | null;
+  posterUrl: string | null;
+  imdbRating: number | null;
+  rottenTomatoesRating: number | null;
+  description: string | null;
+  genres: string[];
+  totalSeasons: number | null;
+}
+
 export interface RefreshAllResult {
   refreshedCount: number;
   skippedCount: number;

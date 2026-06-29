@@ -33,6 +33,38 @@ public class RecommendationRefreshService(
         return new RefreshSourceRecommendationsResultDto(addedCount, totalForSource);
     }
 
+    public async Task RemoveRecommendationsForDeletedMediaAsync(MediaItem deleted, CancellationToken ct = default)
+    {
+        var existing = await recommendationRepository.GetAllAsync(new RecommendationListQuery(), ct);
+        var deletedKey = string.IsNullOrWhiteSpace(deleted.TmdbId)
+            ? null
+            : TmdbKey(deleted.Type, deleted.TmdbId);
+        var updated = new List<RecommendationItem>();
+
+        foreach (var item in existing)
+        {
+            if (deletedKey is not null && TmdbKey(item.Type, item.TmdbId) == deletedKey)
+                continue;
+
+            var links = item.SimilarTo.Where(s => s.SourceMediaId != deleted.Id).ToList();
+            if (links.Count == item.SimilarTo.Count)
+            {
+                updated.Add(item);
+                continue;
+            }
+
+            if (links.Count == 0)
+                continue;
+
+            var removedLinks = item.SimilarTo.Count - links.Count;
+            item.SimilarTo = links;
+            item.RelevanceCount = Math.Max(0, item.RelevanceCount - removedLinks);
+            updated.Add(item);
+        }
+
+        await recommendationRepository.ReplaceAllAsync(updated, ct);
+    }
+
     public async Task RemoveItemsInLibraryAsync(CancellationToken ct = default)
     {
         var libraryTmdbKeys = await GetLibraryTmdbKeysAsync(ct);

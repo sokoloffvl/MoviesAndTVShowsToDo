@@ -58,6 +58,18 @@ public record MediaSearchResultDto(
     string? PosterUrl,
     double? Rating);
 
+public record MediaSearchPreviewDto(
+    string ExternalId,
+    string Title,
+    string MediaType,
+    int? Year,
+    string? PosterUrl,
+    double? ImdbRating,
+    int? RottenTomatoesRating,
+    string? Description,
+    IReadOnlyList<string> Genres,
+    int? TotalSeasons);
+
 public record RefreshHistoryResultDto(
     int RefreshedCount,
     int SkippedCount,

@@ -79,6 +79,19 @@ public class MediaController(MediaService mediaService, RecommendationService re
         return Ok(await mediaService.SearchExternalAsync(q, ct));
     }
 
+    [HttpGet("search/preview")]
+    public async Task<ActionResult<MediaSearchPreviewDto>> SearchPreview(
+        [FromQuery] string externalId,
+        [FromQuery] MediaType type,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(externalId))
+            return BadRequest("externalId is required.");
+
+        var preview = await mediaService.GetSearchPreviewAsync(externalId, type, ct);
+        return preview is null ? NotFound() : Ok(preview);
+    }
+
     [HttpPost]
     public async Task<ActionResult<MediaDetailDto>> Add([FromBody] AddMediaRequest request, CancellationToken ct)
     {

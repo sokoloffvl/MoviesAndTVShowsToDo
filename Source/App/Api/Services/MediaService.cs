@@ -8,7 +8,8 @@ public class MediaService(
     IMediaRepository repository,
     IMetadataAggregator metadataAggregator,
     IRecommendationRepository recommendationRepository,
-    IRecommendationRefreshQueue recommendationRefreshQueue)
+    IRecommendationRefreshQueue recommendationRefreshQueue,
+    RecommendationRefreshService recommendationRefreshService)
 {
     public Task<IReadOnlyList<MediaSummaryDto>> GetWatchlistAsync(MediaListQuery query, CancellationToken ct = default) =>
         MapSummaries(repository.GetAllAsync(query with { Watched = false }, ct));
@@ -73,6 +74,28 @@ public class MediaService(
             h.Year,
             h.PosterUrl,
             h.Rating)).ToList();
+    }
+
+    public async Task<MediaSearchPreviewDto?> GetSearchPreviewAsync(
+        string externalId,
+        MediaType type,
+        CancellationToken ct = default)
+    {
+        var metadata = await metadataAggregator.GetByExternalIdAsync(externalId, type, ct);
+        if (metadata is null)
+            return null;
+
+        return new MediaSearchPreviewDto(
+            externalId,
+            metadata.Title,
+            metadata.Type.ToString(),
+            metadata.Year,
+            metadata.PosterUrl,
+            metadata.ImdbRating,
+            metadata.RottenTomatoesRating,
+            metadata.Description,
+            metadata.Genres,
+            metadata.TotalSeasons);
     }
 
     public async Task<MediaDetailDto?> AddFromQueryAsync(string query, CancellationToken ct = default)
@@ -265,8 +288,18 @@ public class MediaService(
         return false;
     }
 
-    public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default) =>
-        repository.DeleteAsync(id, ct);
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
+    {
+        var item = await repository.GetByIdAsync(id, ct);
+        if (item is null)
+            return false;
+
+        var deleted = await repository.DeleteAsync(id, ct);
+        if (deleted)
+            await recommendationRefreshService.RemoveRecommendationsForDeletedMediaAsync(item, ct);
+
+        return deleted;
+    }
 
     private static void ApplyUserRatings(MediaItem item, UserRatingsInput ratings)
     {
