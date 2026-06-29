@@ -8,6 +8,7 @@ public class RecommendationService(
     IMediaRepository mediaRepository,
     IRecommendationRepository recommendationRepository,
     RecommendationRefreshService refreshService,
+    IRecommendationRefreshQueue recommendationRefreshQueue,
     IMediaWatchlistGateway watchlistGateway)
 {
     public async Task<IReadOnlyList<RecommendationDto>> GetRecommendationsAsync(
@@ -93,8 +94,8 @@ public class RecommendationService(
         if (detail is null)
             return null;
 
-        await refreshService.RemoveItemsInLibraryAsync(ct);
-        await refreshService.RefreshForSourceAsync(detail.Id, ct);
+        recommendationRefreshQueue.EnqueueAfterMediaAdded(detail.Id);
+
         return detail;
     }
 

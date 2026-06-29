@@ -30,6 +30,7 @@ public class RecommendationServiceTests
             _mediaRepository,
             _recommendationRepository,
             refreshService,
+            new SynchronousRecommendationRefreshQueue(refreshService),
             _watchlistGateway);
     }
 

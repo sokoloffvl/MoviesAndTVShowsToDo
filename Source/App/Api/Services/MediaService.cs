@@ -8,7 +8,7 @@ public class MediaService(
     IMediaRepository repository,
     IMetadataAggregator metadataAggregator,
     IRecommendationRepository recommendationRepository,
-    RecommendationRefreshService recommendationRefreshService)
+    IRecommendationRefreshQueue recommendationRefreshQueue)
 {
     public Task<IReadOnlyList<MediaSummaryDto>> GetWatchlistAsync(MediaListQuery query, CancellationToken ct = default) =>
         MapSummaries(repository.GetAllAsync(query with { Watched = false }, ct));
@@ -82,7 +82,7 @@ public class MediaService(
             return null;
 
         var item = await SaveAsync(metadata, ct);
-        await RefreshRecommendationsForSourceAsync(item, ct);
+        QueueRecommendationsRefresh(item);
         return ToDetailDto(item);
     }
 
@@ -98,7 +98,7 @@ public class MediaService(
 
         var item = await SaveAsync(metadata, ct);
         if (refreshRecommendations)
-            await RefreshRecommendationsForSourceAsync(item, ct);
+            QueueRecommendationsRefresh(item);
 
         return ToDetailDto(item);
     }
@@ -316,11 +316,10 @@ public class MediaService(
         return await repository.AddAsync(item, ct);
     }
 
-    private async Task RefreshRecommendationsForSourceAsync(MediaItem item, CancellationToken ct)
+    private void QueueRecommendationsRefresh(MediaItem item)
     {
-        await recommendationRefreshService.RemoveItemsInLibraryAsync(ct);
         if (!string.IsNullOrWhiteSpace(item.TmdbId))
-            await recommendationRefreshService.RefreshForSourceAsync(item.Id, ct);
+            recommendationRefreshQueue.EnqueueAfterMediaAdded(item.Id);
     }
 
     private static async Task<IReadOnlyList<MediaSummaryDto>> MapSummaries(

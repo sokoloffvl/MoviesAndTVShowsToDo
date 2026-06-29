@@ -21,11 +21,37 @@ public class MediaServiceTests
         _recommendationRepository = new FakeRecommendationRepository();
         _tmdbClient = new FakeTmdbRecommendationClient();
         _metadata = new FakeMetadataAggregator();
+        var refreshService = new RecommendationRefreshService(
+            _repository,
+            _recommendationRepository,
+            _tmdbClient);
         _service = new MediaService(
             _repository,
             _metadata,
             _recommendationRepository,
-            new RecommendationRefreshService(_repository, _recommendationRepository, _tmdbClient));
+            new SynchronousRecommendationRefreshQueue(refreshService));
+    }
+
+    [Test]
+    public async Task AddFromQueryAsync_EnqueuesRecommendationRefreshWithoutBlockingResponse()
+    {
+        _metadata.NextResolve = SampleMetadata("Inception");
+        var recordingQueue = new RecordingRecommendationRefreshQueue();
+        var service = new MediaService(
+            _repository,
+            _metadata,
+            _recommendationRepository,
+            recordingQueue);
+
+        var result = await service.AddFromQueryAsync("Inception");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.Not.Null);
+            Assert.That(recordingQueue.EnqueuedMediaIds, Has.Count.EqualTo(1));
+            Assert.That(recordingQueue.EnqueuedMediaIds[0], Is.EqualTo(result!.Id));
+            Assert.That(_recommendationRepository.Items, Is.Empty);
+        });
     }
 
     [Test]
