@@ -10,6 +10,7 @@ public class MediaServiceTests
 {
     private FakeMediaRepository _repository = null!;
     private FakeRecommendationRepository _recommendationRepository = null!;
+    private FakeTmdbRecommendationClient _tmdbClient = null!;
     private FakeMetadataAggregator _metadata = null!;
     private MediaService _service = null!;
 
@@ -18,8 +19,32 @@ public class MediaServiceTests
     {
         _repository = new FakeMediaRepository();
         _recommendationRepository = new FakeRecommendationRepository();
+        _tmdbClient = new FakeTmdbRecommendationClient();
         _metadata = new FakeMetadataAggregator();
-        _service = new MediaService(_repository, _metadata, _recommendationRepository);
+        _service = new MediaService(
+            _repository,
+            _metadata,
+            _recommendationRepository,
+            new RecommendationRefreshService(_repository, _recommendationRepository, _tmdbClient));
+    }
+
+    [Test]
+    public async Task AddFromQueryAsync_RefreshesRecommendationsForAddedItem()
+    {
+        _metadata.NextResolve = SampleMetadata("Inception");
+        _tmdbClient.Recommendations["27205"] =
+        [
+            new MediaRecommendationHit("155", "Dark Knight", MediaType.Movie, 2008, null, 9.0, null)
+        ];
+
+        await _service.AddFromQueryAsync("Inception");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_repository.Items, Has.Count.EqualTo(1));
+            Assert.That(_recommendationRepository.Items.Single().TmdbId, Is.EqualTo("155"));
+            Assert.That(_repository.Items.Single().LastUsedForRecommendationsAt, Is.Not.Null);
+        });
     }
 
     [Test]
@@ -848,6 +873,19 @@ public class MediaServiceTests
             Items.AddRange(items);
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class FakeTmdbRecommendationClient : ITmdbRecommendationClient
+    {
+        public Dictionary<string, List<MediaRecommendationHit>> Recommendations { get; } = new();
+
+        public Task<IReadOnlyList<MediaRecommendationHit>> GetRecommendationsAsync(
+            string externalId,
+            MediaType type,
+            int limit = 10,
+            CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<MediaRecommendationHit>>(
+                Recommendations.GetValueOrDefault(externalId)?.Take(limit).ToList() ?? []);
     }
 
     private sealed class FakeMetadataAggregator : IMetadataAggregator

@@ -21,10 +21,15 @@ public class RecommendationServiceTests
         _recommendationRepository = new FakeRecommendationRepository();
         _tmdbClient = new FakeTmdbRecommendationClient();
         _watchlistGateway = new FakeWatchlistGateway();
+        _watchlistGateway.MediaRepository = _mediaRepository;
+        var refreshService = new RecommendationRefreshService(
+            _mediaRepository,
+            _recommendationRepository,
+            _tmdbClient);
         _service = new RecommendationService(
             _mediaRepository,
             _recommendationRepository,
-            _tmdbClient,
+            refreshService,
             _watchlistGateway);
     }
 
@@ -343,6 +348,89 @@ public class RecommendationServiceTests
     }
 
     [Test]
+    public async Task GetRecommendationsAsync_ExcludesItemsAlreadyInLibrary()
+    {
+        await _mediaRepository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Dark Knight",
+            Type = MediaType.Movie,
+            TmdbId = "155",
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        _recommendationRepository.Items.Add(new RecommendationItem
+        {
+            Id = Guid.NewGuid(),
+            TmdbId = "155",
+            Type = MediaType.Movie,
+            Title = "Dark Knight",
+            RelevanceCount = 1,
+            GeneratedAt = DateTimeOffset.UtcNow
+        });
+        _recommendationRepository.Items.Add(new RecommendationItem
+        {
+            Id = Guid.NewGuid(),
+            TmdbId = "999",
+            Type = MediaType.Movie,
+            Title = "Other",
+            RelevanceCount = 1,
+            GeneratedAt = DateTimeOffset.UtcNow
+        });
+
+        var result = await _service.GetRecommendationsAsync(new RecommendationListQuery());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result.Single().TmdbId, Is.EqualTo("999"));
+            Assert.That(result.Single().InWatchlist, Is.False);
+        });
+    }
+
+    [Test]
+    public async Task AddToWatchlistAsync_RemovesRecommendationAndRefreshesForAddedMedia()
+    {
+        var mediaId = Guid.NewGuid();
+        await _mediaRepository.AddAsync(new MediaItem
+        {
+            Id = mediaId,
+            Title = "Dark Knight",
+            Type = MediaType.Movie,
+            TmdbId = "155",
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        var recommendation = new RecommendationItem
+        {
+            Id = Guid.NewGuid(),
+            TmdbId = "155",
+            Type = MediaType.Movie,
+            Title = "Dark Knight",
+            RelevanceCount = 1,
+            GeneratedAt = DateTimeOffset.UtcNow
+        };
+        _recommendationRepository.Items.Add(recommendation);
+
+        _tmdbClient.Recommendations["155"] =
+        [
+            new MediaRecommendationHit("693134", "Dune Part Two", MediaType.Movie, 2024, null, 8.5, "Epic")
+        ];
+
+        _watchlistGateway.NextDetailId = mediaId;
+
+        await _service.AddToWatchlistAsync(recommendation.Id);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_recommendationRepository.Items.Any(i => i.TmdbId == "155"), Is.False);
+            Assert.That(_recommendationRepository.Items.Single().TmdbId, Is.EqualTo("693134"));
+            Assert.That(
+                _recommendationRepository.Items.Single().SimilarTo.Single().SourceMediaId,
+                Is.EqualTo(mediaId));
+        });
+    }
+
+    [Test]
     public async Task AddToWatchlistAsync_AddsRecommendationViaGateway()
     {
         var recommendation = new RecommendationItem
@@ -355,6 +443,10 @@ public class RecommendationServiceTests
             GeneratedAt = DateTimeOffset.UtcNow
         };
         _recommendationRepository.Items.Add(recommendation);
+        _tmdbClient.Recommendations["155"] =
+        [
+            new MediaRecommendationHit("693134", "Dune Part Two", MediaType.Movie, 2024, null, 8.5, "Epic")
+        ];
 
         await _service.AddToWatchlistAsync(recommendation.Id);
 
@@ -362,6 +454,8 @@ public class RecommendationServiceTests
         {
             Assert.That(_watchlistGateway.LastAddExternalId, Is.EqualTo("155"));
             Assert.That(_watchlistGateway.LastAddType, Is.EqualTo(MediaType.Movie));
+            Assert.That(_mediaRepository.Items.Single().TmdbId, Is.EqualTo("155"));
+            Assert.That(_recommendationRepository.Items.Any(i => i.TmdbId == "155"), Is.False);
         });
     }
 
@@ -426,17 +520,50 @@ public class RecommendationServiceTests
 
     private sealed class FakeWatchlistGateway : IMediaWatchlistGateway
     {
+        public FakeMediaRepository? MediaRepository { get; set; }
         public string? LastAddExternalId { get; private set; }
         public MediaType? LastAddType { get; private set; }
+        public Guid? NextDetailId { get; set; }
 
         public Task<MediaDetailDto?> AddFromExternalIdAsync(string externalId, MediaType type, CancellationToken ct = default)
         {
             LastAddExternalId = externalId;
             LastAddType = type;
-            return Task.FromResult<MediaDetailDto?>(null);
+            var id = NextDetailId ?? Guid.NewGuid();
+            MediaRepository?.Items.Add(new MediaItem
+            {
+                Id = id,
+                Title = "Dark Knight",
+                Type = type,
+                TmdbId = externalId,
+                CreatedAt = DateTimeOffset.UtcNow
+            });
+            return Task.FromResult<MediaDetailDto?>(CreateDetail(id));
         }
 
         public Task<MediaDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default) =>
-            Task.FromResult<MediaDetailDto?>(null);
+            Task.FromResult<MediaDetailDto?>(CreateDetail(id));
+
+        private static MediaDetailDto CreateDetail(Guid id) => new(
+            id,
+            "Dark Knight",
+            MediaType.Movie.ToString(),
+            2008,
+            null,
+            null,
+            9.0,
+            null,
+            null,
+            null,
+            null,
+            [],
+            [],
+            [],
+            null,
+            null,
+            new UserRatingsDto(null, null, null),
+            false,
+            null,
+            DateTimeOffset.UtcNow);
     }
 }

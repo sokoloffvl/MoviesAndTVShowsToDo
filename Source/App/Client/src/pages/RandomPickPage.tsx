@@ -60,10 +60,7 @@ export function RandomPickPage() {
     try {
       await api.addRecommendationToWatchlist(recommendation.id);
       if (pick?.recommendation?.id === recommendation.id) {
-        setPick({
-          ...pick,
-          recommendation: { ...recommendation, inWatchlist: true },
-        });
+        await pickRandom();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add to watchlist');

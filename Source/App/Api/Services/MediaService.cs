@@ -7,7 +7,8 @@ namespace MoviesAndTVShowsToDo.Api.Services;
 public class MediaService(
     IMediaRepository repository,
     IMetadataAggregator metadataAggregator,
-    IRecommendationRepository recommendationRepository)
+    IRecommendationRepository recommendationRepository,
+    RecommendationRefreshService recommendationRefreshService)
 {
     public Task<IReadOnlyList<MediaSummaryDto>> GetWatchlistAsync(MediaListQuery query, CancellationToken ct = default) =>
         MapSummaries(repository.GetAllAsync(query with { Watched = false }, ct));
@@ -80,19 +81,26 @@ public class MediaService(
         if (metadata is null)
             return null;
 
-        return ToDetailDto(await SaveAsync(metadata, ct));
+        var item = await SaveAsync(metadata, ct);
+        await RefreshRecommendationsForSourceAsync(item, ct);
+        return ToDetailDto(item);
     }
 
     public async Task<MediaDetailDto?> AddFromExternalIdAsync(
         string externalId,
         MediaType type,
+        bool refreshRecommendations = true,
         CancellationToken ct = default)
     {
         var metadata = await metadataAggregator.GetByExternalIdAsync(externalId, type, ct);
         if (metadata is null)
             return null;
 
-        return ToDetailDto(await SaveAsync(metadata, ct));
+        var item = await SaveAsync(metadata, ct);
+        if (refreshRecommendations)
+            await RefreshRecommendationsForSourceAsync(item, ct);
+
+        return ToDetailDto(item);
     }
 
     public async Task<MediaDetailDto?> MarkWatchedAsync(
@@ -306,6 +314,13 @@ public class MediaService(
         };
 
         return await repository.AddAsync(item, ct);
+    }
+
+    private async Task RefreshRecommendationsForSourceAsync(MediaItem item, CancellationToken ct)
+    {
+        await recommendationRefreshService.RemoveItemsInLibraryAsync(ct);
+        if (!string.IsNullOrWhiteSpace(item.TmdbId))
+            await recommendationRefreshService.RefreshForSourceAsync(item.Id, ct);
     }
 
     private static async Task<IReadOnlyList<MediaSummaryDto>> MapSummaries(

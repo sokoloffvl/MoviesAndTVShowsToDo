@@ -95,7 +95,7 @@ public class MediaController(MediaService mediaService, RecommendationService re
         [FromQuery] MediaType type,
         CancellationToken ct)
     {
-        var item = await mediaService.AddFromExternalIdAsync(externalId, type, ct);
+        var item = await mediaService.AddFromExternalIdAsync(externalId, type, ct: ct);
         return item is null ? NotFound() : CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
     }
 

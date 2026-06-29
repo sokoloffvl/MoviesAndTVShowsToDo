@@ -7,18 +7,19 @@ namespace MoviesAndTVShowsToDo.Api.Services;
 public class RecommendationService(
     IMediaRepository mediaRepository,
     IRecommendationRepository recommendationRepository,
-    ITmdbRecommendationClient tmdbClient,
+    RecommendationRefreshService refreshService,
     IMediaWatchlistGateway watchlistGateway)
 {
-    private const int RecommendationsPerSource = 10;
-
     public async Task<IReadOnlyList<RecommendationDto>> GetRecommendationsAsync(
         RecommendationListQuery query,
         CancellationToken ct = default)
     {
         var items = await recommendationRepository.GetAllAsync(query, ct);
         var libraryTmdbKeys = await GetLibraryTmdbKeysAsync(ct);
-        return items.Select(i => ToDto(i, libraryTmdbKeys)).ToList();
+        return items
+            .Where(i => !libraryTmdbKeys.Contains(RecommendationRefreshService.TmdbKey(i.Type, i.TmdbId)))
+            .Select(i => ToDto(i))
+            .ToList();
     }
 
     public async Task<IReadOnlyList<RecommendationDto>> GetForSourceAsync(Guid sourceMediaId, CancellationToken ct = default)
@@ -27,8 +28,9 @@ public class RecommendationService(
         var libraryTmdbKeys = await GetLibraryTmdbKeysAsync(ct);
         return items
             .Where(i => i.SimilarTo.Any(s => s.SourceMediaId == sourceMediaId))
+            .Where(i => !libraryTmdbKeys.Contains(RecommendationRefreshService.TmdbKey(i.Type, i.TmdbId)))
             .OrderByDescending(i => i.RelevanceCount)
-            .Select(i => ToDto(i, libraryTmdbKeys))
+            .Select(i => ToDto(i))
             .ToList();
     }
 
@@ -40,13 +42,13 @@ public class RecommendationService(
         var eligibleSources = withTmdbId.Where(i => IsEligibleRecommendationSource(i, now)).ToList();
         var skippedSourceCount = withTmdbId.Count - eligibleSources.Count;
 
-        var libraryTmdbKeys = BuildLibraryTmdbKeys(withTmdbId);
-        var aggregated = await LoadAggregatedRecommendationsAsync(ct);
+        var libraryTmdbKeys = RecommendationRefreshService.BuildLibraryTmdbKeys(withTmdbId);
+        var aggregated = await refreshService.LoadAggregatedAsync(ct);
         var newRecommendationCount = 0;
 
         foreach (var source in eligibleSources)
         {
-            newRecommendationCount += await MergeRecommendationsFromSourceAsync(
+            newRecommendationCount += await refreshService.MergeFromSourceAsync(
                 source,
                 aggregated,
                 libraryTmdbKeys,
@@ -61,105 +63,14 @@ public class RecommendationService(
             newRecommendationCount);
     }
 
-    public async Task<RefreshSourceRecommendationsResultDto?> RefreshForSourceAsync(
+    public Task<RefreshSourceRecommendationsResultDto?> RefreshForSourceAsync(
         Guid sourceMediaId,
-        CancellationToken ct = default)
-    {
-        var source = await mediaRepository.GetByIdAsync(sourceMediaId, ct);
-        if (source is null || string.IsNullOrWhiteSpace(source.TmdbId))
-            return null;
-
-        var library = await mediaRepository.GetAllAsync(new MediaListQuery(), ct);
-        var libraryTmdbKeys = BuildLibraryTmdbKeys(library.Where(i => !string.IsNullOrWhiteSpace(i.TmdbId)));
-        var aggregated = await LoadAggregatedRecommendationsAsync(ct);
-        var now = DateTimeOffset.UtcNow;
-
-        var addedCount = await MergeRecommendationsFromSourceAsync(
-            source,
-            aggregated,
-            libraryTmdbKeys,
-            now,
-            ct);
-
-        await recommendationRepository.ReplaceAllAsync(aggregated.Values.ToList(), ct);
-
-        var totalForSource = aggregated.Values
-            .Count(i => i.SimilarTo.Any(s => s.SourceMediaId == sourceMediaId));
-
-        return new RefreshSourceRecommendationsResultDto(addedCount, totalForSource);
-    }
+        CancellationToken ct = default) =>
+        refreshService.RefreshForSourceAsync(sourceMediaId, ct);
 
     private static bool IsEligibleRecommendationSource(MediaItem item, DateTimeOffset now) =>
         item.LastUsedForRecommendationsAt is null
         || item.LastUsedForRecommendationsAt <= now.AddMonths(-3);
-
-    private async Task<Dictionary<string, RecommendationItem>> LoadAggregatedRecommendationsAsync(CancellationToken ct)
-    {
-        var existing = await recommendationRepository.GetAllAsync(new RecommendationListQuery(), ct);
-        return existing.ToDictionary(i => TmdbKey(i.Type, i.TmdbId), StringComparer.Ordinal);
-    }
-
-    private static HashSet<string> BuildLibraryTmdbKeys(IEnumerable<MediaItem> library) =>
-        library
-            .Select(i => TmdbKey(i.Type, i.TmdbId!))
-            .ToHashSet(StringComparer.Ordinal);
-
-    private async Task<int> MergeRecommendationsFromSourceAsync(
-        MediaItem source,
-        Dictionary<string, RecommendationItem> aggregated,
-        HashSet<string> libraryTmdbKeys,
-        DateTimeOffset generatedAt,
-        CancellationToken ct)
-    {
-        var hits = await tmdbClient.GetRecommendationsAsync(
-            source.TmdbId!,
-            source.Type,
-            RecommendationsPerSource,
-            ct);
-
-        source.LastUsedForRecommendationsAt = generatedAt;
-        await mediaRepository.UpdateAsync(source, ct);
-
-        var newRecommendationCount = 0;
-
-        foreach (var hit in hits)
-        {
-            var key = TmdbKey(hit.Type, hit.ExternalId);
-            if (libraryTmdbKeys.Contains(key))
-                continue;
-
-            if (!aggregated.TryGetValue(key, out var item))
-            {
-                item = new RecommendationItem
-                {
-                    Id = Guid.NewGuid(),
-                    TmdbId = hit.ExternalId,
-                    Type = hit.Type,
-                    Title = hit.Title,
-                    Year = hit.Year,
-                    PosterUrl = hit.PosterUrl,
-                    ImdbRating = hit.Rating,
-                    Description = hit.Description,
-                    GeneratedAt = generatedAt
-                };
-                aggregated[key] = item;
-                newRecommendationCount++;
-            }
-            else if (item.SimilarTo.Any(s => s.SourceMediaId == source.Id))
-            {
-                continue;
-            }
-
-            item.RelevanceCount++;
-            item.SimilarTo.Add(new SimilarSource
-            {
-                SourceMediaId = source.Id,
-                SourceTitle = source.Title
-            });
-        }
-
-        return newRecommendationCount;
-    }
 
     public async Task<MediaDetailDto?> AddToWatchlistAsync(Guid recommendationId, CancellationToken ct = default)
     {
@@ -169,10 +80,22 @@ public class RecommendationService(
             return null;
 
         var existing = await FindLibraryItemByTmdbAsync(recommendation.TmdbId, recommendation.Type, ct);
+        MediaDetailDto? detail;
         if (existing is not null)
-            return await watchlistGateway.GetDetailAsync(existing.Id, ct);
+        {
+            detail = await watchlistGateway.GetDetailAsync(existing.Id, ct);
+        }
+        else
+        {
+            detail = await watchlistGateway.AddFromExternalIdAsync(recommendation.TmdbId, recommendation.Type, ct);
+        }
 
-        return await watchlistGateway.AddFromExternalIdAsync(recommendation.TmdbId, recommendation.Type, ct);
+        if (detail is null)
+            return null;
+
+        await refreshService.RemoveItemsInLibraryAsync(ct);
+        await refreshService.RefreshForSourceAsync(detail.Id, ct);
+        return detail;
     }
 
     private async Task<MediaItem?> FindLibraryItemByTmdbAsync(
@@ -187,12 +110,11 @@ public class RecommendationService(
     private async Task<HashSet<string>> GetLibraryTmdbKeysAsync(CancellationToken ct)
     {
         var library = await mediaRepository.GetAllAsync(new MediaListQuery(), ct);
-        return BuildLibraryTmdbKeys(library.Where(i => !string.IsNullOrWhiteSpace(i.TmdbId)));
+        return RecommendationRefreshService.BuildLibraryTmdbKeys(
+            library.Where(i => !string.IsNullOrWhiteSpace(i.TmdbId)));
     }
 
-    private static string TmdbKey(MediaType type, string tmdbId) => $"{type}:{tmdbId}";
-
-    private static RecommendationDto ToDto(RecommendationItem item, HashSet<string> libraryTmdbKeys) => new(
+    private static RecommendationDto ToDto(RecommendationItem item) => new(
         item.Id,
         item.TmdbId,
         item.Type.ToString(),
@@ -205,6 +127,6 @@ public class RecommendationService(
         item.WatchSources.Select(w => w.Provider.ToDisplayName()).Distinct().ToList(),
         item.RelevanceCount,
         item.SimilarTo.Select(s => new SimilarSourceDto(s.SourceMediaId, s.SourceTitle)).ToList(),
-        libraryTmdbKeys.Contains(TmdbKey(item.Type, item.TmdbId)),
+        false,
         item.GeneratedAt);
 }

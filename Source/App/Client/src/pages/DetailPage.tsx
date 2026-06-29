@@ -80,11 +80,7 @@ export function DetailPage() {
     setError(null);
     try {
       await api.addRecommendationToWatchlist(recommendation.id);
-      setRecommendations((current) =>
-        current.map((entry) =>
-          entry.id === recommendation.id ? { ...entry, inWatchlist: true } : entry,
-        ),
-      );
+      setRecommendations((current) => current.filter((entry) => entry.id !== recommendation.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add to watchlist');
     } finally {

@@ -28,6 +28,7 @@ builder.Services.AddScoped<IMediaRepository, MartenMediaRepository>();
 builder.Services.AddScoped<IRecommendationRepository, MartenRecommendationRepository>();
 builder.Services.AddScoped<IWatchRoundRepository, MartenWatchRoundRepository>();
 builder.Services.AddScoped<MediaService>();
+builder.Services.AddScoped<RecommendationRefreshService>();
 builder.Services.AddScoped<IMediaWatchlistGateway, MediaWatchlistGateway>();
 builder.Services.AddScoped<RecommendationService>();
 builder.Services.AddScoped<WatchRoundService>();
