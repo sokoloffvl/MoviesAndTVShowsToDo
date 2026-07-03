@@ -2,44 +2,57 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1.25rem;
+  gap: 0.65rem;
+  padding: 0.55rem 1rem;
   background: #0f172a;
   color: #f8fafc;
   flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
   color: inherit;
   text-decoration: none;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .brand-icon {
-  font-size: 1.4rem;
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
 .nav {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.3rem;
   flex: 1;
+  min-width: 0;
 }
 
 .nav a {
   color: #94a3b8;
   text-decoration: none;
-  padding: 0.4rem 0.75rem;
+  padding: 0.28rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .nav a.active,
@@ -49,14 +62,16 @@
 }
 
 .btn-refresh-all {
-  padding: 0.45rem 0.85rem;
+  padding: 0.3rem 0.65rem;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 999px;
   background: transparent;
   color: #f8fafc;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .btn-refresh-all:hover:not(:disabled) {
@@ -72,8 +87,10 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.35rem;
-  min-width: 160px;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .refresh-all-progress {
@@ -97,8 +114,8 @@
 
 .refresh-all-progress-label {
   display: block;
-  margin-top: 0.25rem;
-  font-size: 0.7rem;
+  margin-top: 0.2rem;
+  font-size: 0.65rem;
   color: #94a3b8;
   white-space: nowrap;
   overflow: hidden;
@@ -108,12 +125,15 @@
 }
 
 .global-message {
-  padding: 0.65rem 1.25rem;
+  padding: 0.55rem 1rem;
   background: #eff6ff;
   color: #1d4ed8;
   border-bottom: 1px solid #bfdbfe;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
+  max-width: 100%;
+  box-sizing: border-box;
+  word-break: break-word;
 }
 
 .main {
@@ -122,10 +142,58 @@
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .header {
-    padding: 0.75rem 1rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'brand refresh'
+      'nav nav';
+    gap: 0.4rem 0.5rem;
+    padding: 0.45rem 0.65rem;
+    align-items: center;
+  }
+
+  .brand {
+    grid-area: brand;
+    font-size: 0.9rem;
+  }
+
+  .nav {
+    grid-area: nav;
+    flex: none;
+    width: 100%;
+    gap: 0.2rem;
+  }
+
+  .nav a {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.72rem;
+  }
+
+  .refresh-all-wrap {
+    grid-area: refresh;
+    align-items: flex-end;
+  }
+
+  .btn-refresh-all {
+    padding: 0.22rem 0.45rem;
+    font-size: 0.72rem;
+  }
+
+  .refresh-all-progress {
+    max-width: min(220px, 42vw);
+  }
+
+  .refresh-all-progress-label {
+    max-width: min(220px, 42vw);
+    font-size: 0.6rem;
+  }
+
+  .main {
+    padding: 0.85rem;
   }
 }

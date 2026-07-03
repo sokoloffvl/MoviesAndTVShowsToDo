@@ -55,17 +55,19 @@ export function Layout() {
     <div className="layout">
       <header className="header">
         <Link to="/" className="brand">
-          <span className="brand-icon">🎬</span>
-          <span>Movies To-Do</span>
+          <span className="brand-icon" aria-hidden="true">
+            🎬
+          </span>
+          <span>To-Do</span>
         </Link>
-        <nav className="nav">
+        <nav className="nav" aria-label="Main">
           <NavLink to="/" end>
-            Watchlist
+            List
           </NavLink>
           <NavLink to="/add">Add</NavLink>
-          <NavLink to="/random">Random pick</NavLink>
-          <NavLink to="/recommendations">Recommendations</NavLink>
-          <NavLink to="/pick-a-watch">Pick a watch</NavLink>
+          <NavLink to="/random">Random</NavLink>
+          <NavLink to="/recommendations">Recs</NavLink>
+          <NavLink to="/pick-a-watch">Pick</NavLink>
           <NavLink to="/history">History</NavLink>
         </nav>
         <div className="refresh-all-wrap">
@@ -74,8 +76,9 @@ export function Layout() {
             className="btn-refresh-all"
             onClick={() => void handleRefreshAll()}
             disabled={refreshing}
+            aria-label={refreshing ? 'Refreshing all media' : 'Refresh all media'}
           >
-            {refreshing ? 'Refreshing…' : 'Refresh all'}
+            {refreshing ? '…' : 'Refresh'}
           </button>
           {refreshing && progress && (
             <div className="refresh-all-progress" role="progressbar" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100}>
