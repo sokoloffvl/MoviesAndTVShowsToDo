@@ -22,6 +22,7 @@ export interface MediaSummary {
   genres: string[];
   totalSeasons: number | null;
   watchedSeasons: number | null;
+  excitement: number;
   userRatings: UserRatings;
   isWatched: boolean;
 }
@@ -97,6 +98,7 @@ export type SortField =
   | 'RottenTomatoesRating'
   | 'Title'
   | 'SeasonsRemaining'
+  | 'Excitement'
   | 'Relevance'
   | 'GeneratedAt';
 
@@ -142,6 +144,7 @@ export const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'RottenTomatoesRating', label: 'Rotten Tomatoes' },
   { value: 'Title', label: 'Title (A–Z)' },
   { value: 'SeasonsRemaining', label: 'Seasons left' },
+  { value: 'Excitement', label: 'Excitement' },
 ];
 
 export const RECOMMENDATION_SORT_OPTIONS: { value: SortField; label: string }[] = [

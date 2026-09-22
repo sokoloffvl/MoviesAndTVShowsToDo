@@ -124,6 +124,9 @@ public class MartenMediaRepository(IDocumentSession session) : IMediaRepository
             MediaSortField.SeasonsRemaining => descending
                 ? list.OrderByDescending(m => SeasonsRemainingSortKey(m, forDescending: true))
                 : list.OrderBy(m => SeasonsRemainingSortKey(m, forDescending: false)),
+            MediaSortField.Excitement => descending
+                ? list.OrderByDescending(m => m.Excitement)
+                : list.OrderBy(m => m.Excitement),
             _ => descending
                 ? list.OrderByDescending(m => m.CreatedAt)
                 : list.OrderBy(m => m.CreatedAt)

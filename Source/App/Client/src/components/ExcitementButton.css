@@ -1,0 +1,125 @@
+.excitement-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.excitement-button:hover {
+  background: #ffedd5;
+}
+
+.excitement-button.plain {
+  min-height: 0;
+  padding: 0.35rem 0.5rem;
+  border: none;
+  background: transparent;
+  font-size: 1.15rem;
+}
+
+.excitement-button.plain:hover {
+  background: transparent;
+}
+
+.excitement-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.excitement-modal {
+  width: min(420px, 100%);
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+}
+
+.excitement-modal h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.2rem;
+}
+
+.excitement-title {
+  margin: 0;
+  color: #64748b;
+}
+
+.excitement-preview {
+  min-height: 3rem;
+  margin: 1rem 0;
+  text-align: center;
+  font-size: 2rem;
+}
+
+.excitement-modal label {
+  display: block;
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.excitement-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.excitement-slider-row input {
+  flex: 1;
+}
+
+.excitement-slider-row span {
+  min-width: 1.5rem;
+  color: #ea580c;
+  text-align: center;
+  font-weight: 700;
+}
+
+.excitement-error {
+  margin: 0.75rem 0 0;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.excitement-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.excitement-modal-actions button {
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: #ea580c;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.excitement-modal-actions .btn-secondary {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.excitement-modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

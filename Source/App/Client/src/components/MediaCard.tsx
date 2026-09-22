@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
-import type { MediaSummary } from '../types/media';
+import type { MediaDetail, MediaSummary } from '../types/media';
+import { ExcitementButton } from './ExcitementButton';
 import { UserRatingsDisplay } from './UserRatingsDisplay';
 import './MediaCard.css';
 
 interface MediaCardProps {
   item: MediaSummary;
   onMarkWatched?: (item: MediaSummary) => void;
+  onExcitementUpdated: (item: MediaDetail) => void;
 }
 
 function seasonLabel(item: MediaSummary): string | null {
@@ -21,7 +23,7 @@ function seasonLabel(item: MediaSummary): string | null {
   return `Watched ${watched} of ${item.totalSeasons} · ${remaining} to go`;
 }
 
-export function MediaCard({ item, onMarkWatched }: MediaCardProps) {
+export function MediaCard({ item, onMarkWatched, onExcitementUpdated }: MediaCardProps) {
   const seasons = seasonLabel(item);
   const isTvShow = item.mediaType === 'TvShow';
 
@@ -70,15 +72,23 @@ export function MediaCard({ item, onMarkWatched }: MediaCardProps) {
           )}
         </div>
       </Link>
-      {onMarkWatched && !item.isWatched && !isTvShow && (
-        <button
-          type="button"
-          className="btn-watched"
-          onClick={() => onMarkWatched(item)}
-        >
-          Mark watched
-        </button>
-      )}
+      <div className="media-card-actions">
+        <ExcitementButton
+          id={item.id}
+          title={item.title}
+          excitement={item.excitement}
+          onUpdated={onExcitementUpdated}
+        />
+        {onMarkWatched && !item.isWatched && !isTvShow && (
+          <button
+            type="button"
+            className="btn-watched"
+            onClick={() => onMarkWatched(item)}
+          >
+            Mark watched
+          </button>
+        )}
+      </div>
     </article>
   );
 }

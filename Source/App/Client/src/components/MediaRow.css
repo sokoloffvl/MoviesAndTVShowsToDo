@@ -1,0 +1,102 @@
+.media-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.media-row:last-child {
+  border-bottom: none;
+}
+
+.media-row-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.media-row-poster {
+  flex-shrink: 0;
+  width: 38px;
+  height: 57px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #e2e8f0;
+  display: grid;
+  place-items: center;
+}
+
+.media-row-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.media-row-placeholder {
+  font-size: 1rem;
+  opacity: 0.5;
+}
+
+.media-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.media-row-body h3 {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.25;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.media-row-body .year {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.media-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+}
+
+.media-row-meta .badge,
+.media-row-meta .rating,
+.media-row-meta .provider-chip,
+.media-row-seasons {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.media-row-seasons {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.media-row-actions {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+.media-row-actions .excitement-button {
+  min-width: 2.5rem;
+  border-radius: 0;
+}

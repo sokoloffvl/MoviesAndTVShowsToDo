@@ -20,7 +20,10 @@ public record MediaSummaryDto(
     int? TotalSeasons,
     int? WatchedSeasons,
     UserRatingsDto UserRatings,
-    bool IsWatched);
+    bool IsWatched)
+{
+    public int Excitement { get; init; } = 5;
+}
 
 public record MediaDetailDto(
     Guid Id,
@@ -42,13 +45,18 @@ public record MediaDetailDto(
     UserRatingsDto UserRatings,
     bool IsWatched,
     DateTimeOffset? WatchedAt,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt)
+{
+    public int Excitement { get; init; } = 5;
+}
 
 public record CastMemberDto(string Name, string? Character, string? ProfileImageUrl);
 
 public record WatchSourceDto(string Provider, string? Url);
 
 public record AddMediaRequest(string Query);
+
+public record ExcitementInput(int Excitement);
 
 public record MediaSearchResultDto(
     string ExternalId,

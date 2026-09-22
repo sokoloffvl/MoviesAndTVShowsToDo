@@ -389,18 +389,42 @@ public class RecommendationServiceTests
     }
 
     [Test]
-    public async Task AddToWatchlistAsync_RemovesRecommendationAndRefreshesForAddedMedia()
+    public async Task AddToWatchlistAsync_WhenAlreadyInLibrary_DoesNotCreateDuplicate()
     {
-        var mediaId = Guid.NewGuid();
         await _mediaRepository.AddAsync(new MediaItem
         {
-            Id = mediaId,
+            Id = Guid.NewGuid(),
             Title = "Dark Knight",
             Type = MediaType.Movie,
             TmdbId = "155",
             CreatedAt = DateTimeOffset.UtcNow
         });
 
+        var recommendation = new RecommendationItem
+        {
+            Id = Guid.NewGuid(),
+            TmdbId = "155",
+            Type = MediaType.Movie,
+            Title = "Dark Knight",
+            RelevanceCount = 1,
+            GeneratedAt = DateTimeOffset.UtcNow
+        };
+        _recommendationRepository.Items.Add(recommendation);
+
+        Assert.That(
+            async () => await _service.AddToWatchlistAsync(recommendation.Id),
+            Throws.TypeOf<DuplicateMediaException>().With.Message.Contain("Dark Knight"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(_watchlistGateway.LastAddExternalId, Is.Null);
+            Assert.That(_mediaRepository.Items, Has.Count.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public async Task AddToWatchlistAsync_RemovesRecommendationAndRefreshesForAddedMedia()
+    {
+        var mediaId = Guid.NewGuid();
         var recommendation = new RecommendationItem
         {
             Id = Guid.NewGuid(),

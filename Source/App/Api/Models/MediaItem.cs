@@ -19,6 +19,7 @@ public class MediaItem
     public int? Year { get; set; }
     public int? TotalSeasons { get; set; }
     public int? WatchedSeasons { get; set; }
+    public int Excitement { get; set; } = 5;
     public int? StoryRating { get; set; }
     public int? IntensityRating { get; set; }
     public int? StyleRating { get; set; }

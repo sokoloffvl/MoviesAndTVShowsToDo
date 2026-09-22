@@ -7,7 +7,7 @@ import { RecommendationsPage } from './pages/RecommendationsPage';
 import { WatchRoundPage } from './pages/WatchRoundPage';
 import { RandomPickPage } from './pages/RandomPickPage';
 import { HistoryPage } from './pages/HistoryPage';
-import { HomePage } from './pages/HomePage';
+import { WatchlistPage } from './pages/WatchlistPage';
 import './App.css';
 
 export default function App() {
@@ -15,7 +15,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route index element={<HomePage />} />
+          <Route index element={<WatchlistPage />} />
           <Route path="add" element={<AddMediaPage />} />
           <Route path="random" element={<RandomPickPage />} />
           <Route path="recommendations" element={<RecommendationsPage />} />

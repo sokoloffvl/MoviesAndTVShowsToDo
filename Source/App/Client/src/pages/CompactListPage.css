@@ -1,0 +1,42 @@
+.compact-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.compact-list-header h1 {
+  margin: 0;
+  font-size: clamp(1.15rem, 3.5vw, 1.5rem);
+}
+
+.btn-toggle-filters {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-toggle-filters:hover {
+  background: #f1f5f9;
+}
+
+.media-rows {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.compact-list-page .empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+  background: #fff;
+  border-radius: 16px;
+}

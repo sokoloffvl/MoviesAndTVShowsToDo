@@ -3,7 +3,7 @@ import { api } from '../api/client';
 import { MediaCard } from '../components/MediaCard';
 import { MediaListControls } from '../components/MediaListControls';
 import { MEDIA_REFRESHED_EVENT, dispatchMediaRefreshed } from '../events/mediaRefresh';
-import type { MediaListParams, MediaSummary } from '../types/media';
+import type { MediaDetail, MediaListParams, MediaSummary } from '../types/media';
 import './HistoryPage.css';
 const defaultParams: MediaListParams = {
   sortBy: 'CreatedAt',
@@ -65,6 +65,17 @@ export function HistoryPage() {
     }
   };
 
+  const handleExcitementUpdated = (updated: MediaDetail) => {
+    setItems((current) => {
+      const next = current.map((item) =>
+        item.id === updated.id ? { ...item, excitement: updated.excitement } : item,
+      );
+      if (params.sortBy !== 'Excitement') return next;
+      const direction = params.sortDescending === false ? 1 : -1;
+      return [...next].sort((a, b) => (a.excitement - b.excitement) * direction);
+    });
+  };
+
   if (error) return <div className="page-error">{error}</div>;
 
   return (
@@ -95,7 +106,11 @@ export function HistoryPage() {
       ) : (
         <div className="media-grid">
           {items.map((item) => (
-            <MediaCard key={item.id} item={item} />
+            <MediaCard
+              key={item.id}
+              item={item}
+              onExcitementUpdated={handleExcitementUpdated}
+            />
           ))}
         </div>
       )}

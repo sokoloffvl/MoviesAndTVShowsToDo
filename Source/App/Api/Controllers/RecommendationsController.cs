@@ -30,7 +30,14 @@ public class RecommendationsController(RecommendationService recommendationServi
     [HttpPost("{id:guid}/add-to-watchlist")]
     public async Task<ActionResult<MediaDetailDto>> AddToWatchlist(Guid id, CancellationToken ct)
     {
-        var item = await recommendationService.AddToWatchlistAsync(id, ct);
-        return item is null ? NotFound() : Ok(item);
+        try
+        {
+            var item = await recommendationService.AddToWatchlistAsync(id, ct);
+            return item is null ? NotFound() : Ok(item);
+        }
+        catch (DuplicateMediaException ex)
+        {
+            return Conflict(ex.Message);
+        }
     }
 }

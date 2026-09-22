@@ -108,8 +108,19 @@
   overflow: hidden;
 }
 
+.media-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem 1rem;
+}
+
+.media-card-actions .excitement-button {
+  flex-shrink: 0;
+}
+
 .btn-watched {
-  margin: 0 1rem 1rem;
+  flex: 1;
   padding: 0.6rem;
   border: none;
   border-radius: 10px;

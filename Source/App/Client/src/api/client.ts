@@ -63,6 +63,18 @@ function buildQuery(params?: MediaListParams): string {
   return query ? `?${query}` : '';
 }
 
+function readErrorMessage(text: string): string {
+  const trimmed = text.trim();
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try {
+      return JSON.parse(trimmed) as string;
+    } catch {
+      return trimmed;
+    }
+  }
+  return trimmed;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
@@ -74,7 +86,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(message || response.statusText);
+    throw new Error(readErrorMessage(message) || response.statusText);
   }
 
   if (response.status === 204) {
@@ -188,6 +200,11 @@ export const api = {
     request<MediaDetail>(`/media/${id}/watched?watched=${watched}`, {
       method: 'PATCH',
       body: ratings ? JSON.stringify(ratings) : undefined,
+    }),
+  updateExcitement: (id: string, excitement: number) =>
+    request<MediaDetail>(`/media/${id}/excitement`, {
+      method: 'PATCH',
+      body: JSON.stringify({ excitement }),
     }),
   updateWatchedSeasons: (id: string, watchedSeasons: number, ratings?: UserRatingsInput) =>
     request<MediaDetail>(`/media/${id}/seasons?watchedSeasons=${watchedSeasons}`, {

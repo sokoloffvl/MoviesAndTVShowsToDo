@@ -81,6 +81,44 @@ public class MediaServiceTests
     }
 
     [Test]
+    public async Task AddFromQueryAsync_WhenTmdbIdAlreadyExists_DoesNotCreateDuplicate()
+    {
+        await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Inception",
+            Type = MediaType.Movie,
+            TmdbId = "27205",
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        _metadata.NextResolve = SampleMetadata("Inception");
+
+        Assert.That(
+            async () => await _service.AddFromQueryAsync("Inception"),
+            Throws.TypeOf<DuplicateMediaException>().With.Message.Contain("Inception"));
+        Assert.That(_repository.Items, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task AddFromExternalIdAsync_WhenTmdbIdAlreadyExists_DoesNotCreateDuplicate()
+    {
+        await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Inception",
+            Type = MediaType.Movie,
+            TmdbId = "27205",
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        _metadata.NextExternal = SampleMetadata("Inception");
+
+        Assert.That(
+            async () => await _service.AddFromExternalIdAsync("27205", MediaType.Movie),
+            Throws.TypeOf<DuplicateMediaException>());
+        Assert.That(_repository.Items, Has.Count.EqualTo(1));
+    }
+
+    [Test]
     public async Task AddFromQueryAsync_PersistsResolvedMetadata()
     {
         _metadata.NextResolve = SampleMetadata("Inception");
@@ -92,6 +130,7 @@ public class MediaServiceTests
             Assert.That(result, Is.Not.Null);
             Assert.That(result!.Title, Is.EqualTo("Inception"));
             Assert.That(result.Year, Is.EqualTo(2010));
+            Assert.That(result.Excitement, Is.EqualTo(5));
             Assert.That(result.Genres, Is.EqualTo(["Action", "Science Fiction", "Adventure"]));
             Assert.That(_repository.Items, Has.Count.EqualTo(1));
         });
@@ -552,6 +591,61 @@ public class MediaServiceTests
     }
 
     [Test]
+    public async Task UpdateExcitementAsync_PersistsAndReturnsScore()
+    {
+        var item = await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Dune",
+            Type = MediaType.Movie,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        var updated = await _service.UpdateExcitementAsync(item.Id, 9);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(updated, Is.Not.Null);
+            Assert.That(updated!.Excitement, Is.EqualTo(9));
+            Assert.That(_repository.Items.Single().Excitement, Is.EqualTo(9));
+        });
+    }
+
+    [Test]
+    public void UpdateExcitementAsync_RejectsScoreOutsideOneToTen()
+    {
+        Assert.That(
+            async () => await _service.UpdateExcitementAsync(Guid.NewGuid(), 11),
+            Throws.TypeOf<ArgumentOutOfRangeException>());
+    }
+
+    [Test]
+    public async Task GetWatchlistAsync_SortsByExcitement()
+    {
+        await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Interested",
+            Type = MediaType.Movie,
+            Excitement = 6,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        await _repository.AddAsync(new MediaItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Must Watch",
+            Type = MediaType.Movie,
+            Excitement = 10,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        var watchlist = await _service.GetWatchlistAsync(
+            new MediaListQuery(SortBy: MediaSortField.Excitement, SortDescending: true));
+
+        Assert.That(watchlist.Select(w => w.Title), Is.EqualTo(["Must Watch", "Interested"]));
+    }
+
+    [Test]
     public async Task GetWatchlistAsync_FiltersByGenre()
     {
         await _repository.AddAsync(new MediaItem
@@ -885,6 +979,9 @@ public class MediaServiceTests
                 MediaSortField.SeasonsRemaining => query.SortDescending
                     ? results.OrderByDescending(i => SeasonsRemainingSortKey(i, forDescending: true))
                     : results.OrderBy(i => SeasonsRemainingSortKey(i, forDescending: false)),
+                MediaSortField.Excitement => query.SortDescending
+                    ? results.OrderByDescending(i => i.Excitement)
+                    : results.OrderBy(i => i.Excitement),
                 _ => query.SortDescending
                     ? results.OrderByDescending(i => i.CreatedAt)
                     : results.OrderBy(i => i.CreatedAt)

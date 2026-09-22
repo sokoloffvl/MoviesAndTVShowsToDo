@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
+import { ExcitementButton } from '../components/ExcitementButton';
 import { RateMediaModal } from '../components/RateMediaModal';
 import { RecommendationCard } from '../components/RecommendationCard';
 import { UserRatingsDisplay } from '../components/UserRatingsDisplay';
@@ -172,6 +173,12 @@ export function DetailPage() {
             )}
             <UserRatingsDisplay ratings={item.userRatings} />
             <div className="detail-actions">
+              <ExcitementButton
+                id={item.id}
+                title={item.title}
+                excitement={item.excitement}
+                onUpdated={setItem}
+              />
               {!isTvShow && (
                 <button type="button" onClick={() => void handleMarkWatchedClick()}>
                   {item.isWatched ? 'Mark unwatched' : 'Mark watched'}

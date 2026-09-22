@@ -98,8 +98,15 @@ public class MediaController(MediaService mediaService, RecommendationService re
         if (string.IsNullOrWhiteSpace(request.Query))
             return BadRequest("Query is required.");
 
-        var item = await mediaService.AddFromQueryAsync(request.Query, ct);
-        return item is null ? NotFound("No media found for the given query.") : CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
+        try
+        {
+            var item = await mediaService.AddFromQueryAsync(request.Query, ct);
+            return item is null ? NotFound("No media found for the given query.") : CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
+        }
+        catch (DuplicateMediaException ex)
+        {
+            return Conflict(ex.Message);
+        }
     }
 
     [HttpPost("from-search")]
@@ -108,8 +115,15 @@ public class MediaController(MediaService mediaService, RecommendationService re
         [FromQuery] MediaType type,
         CancellationToken ct)
     {
-        var item = await mediaService.AddFromExternalIdAsync(externalId, type, ct: ct);
-        return item is null ? NotFound() : CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
+        try
+        {
+            var item = await mediaService.AddFromExternalIdAsync(externalId, type, ct: ct);
+            return item is null ? NotFound() : CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
+        }
+        catch (DuplicateMediaException ex)
+        {
+            return Conflict(ex.Message);
+        }
     }
 
     [HttpPatch("{id:guid}/watched")]
@@ -122,6 +136,23 @@ public class MediaController(MediaService mediaService, RecommendationService re
         try
         {
             var item = await mediaService.MarkWatchedAsync(id, watched, ratings, ct);
+            return item is null ? NotFound() : Ok(item);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPatch("{id:guid}/excitement")]
+    public async Task<ActionResult<MediaDetailDto>> UpdateExcitement(
+        Guid id,
+        [FromBody] ExcitementInput input,
+        CancellationToken ct)
+    {
+        try
+        {
+            var item = await mediaService.UpdateExcitementAsync(id, input.Excitement, ct);
             return item is null ? NotFound() : Ok(item);
         }
         catch (ArgumentOutOfRangeException ex)

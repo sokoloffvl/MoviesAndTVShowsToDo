@@ -1,24 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client';
-import { MediaCard } from '../components/MediaCard';
 import { MediaListControls } from '../components/MediaListControls';
-import { RateMediaModal } from '../components/RateMediaModal';
+import { MediaRow } from '../components/MediaRow';
 import { MEDIA_REFRESHED_EVENT } from '../events/mediaRefresh';
 import type { MediaDetail, MediaListParams, MediaSummary } from '../types/media';
-import type { UserRatingsInput } from '../types/userRatings';
-import './HomePage.css';
+import './CompactListPage.css';
 
 const defaultParams: MediaListParams = {
   sortBy: 'CreatedAt',
   sortDescending: true,
 };
 
-export function HomePage() {
+export function CompactListPage() {
   const [items, setItems] = useState<MediaSummary[]>([]);
   const [params, setParams] = useState<MediaListParams>(defaultParams);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [rateTarget, setRateTarget] = useState<MediaSummary | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -42,17 +40,6 @@ export function HomePage() {
     return () => window.removeEventListener(MEDIA_REFRESHED_EVENT, handler);
   }, [load]);
 
-  const handleMarkWatched = (item: MediaSummary) => {
-    setRateTarget(item);
-  };
-
-  const submitRating = async (ratings: UserRatingsInput) => {
-    if (!rateTarget) return;
-    await api.markWatched(rateTarget.id, true, ratings);
-    setItems((current) => current.filter((item) => item.id !== rateTarget.id));
-    setRateTarget(null);
-  };
-
   const handleExcitementUpdated = (updated: MediaDetail) => {
     setItems((current) => {
       const next = current.map((item) =>
@@ -67,13 +54,20 @@ export function HomePage() {
   if (error) return <div className="page-error">{error}</div>;
 
   return (
-    <section className="home-page">
-      <div className="page-header">
-        <h1>Your watchlist</h1>
-        <p>Movies and shows you want to watch.</p>
+    <section className="compact-list-page">
+      <div className="compact-list-header">
+        <h1>Watchlist</h1>
+        <button
+          type="button"
+          className="btn-toggle-filters"
+          onClick={() => setFiltersOpen((open) => !open)}
+          aria-expanded={filtersOpen}
+        >
+          {filtersOpen ? 'Hide filters' : 'Filters'}
+        </button>
       </div>
 
-      <MediaListControls params={params} onChange={setParams} />
+      {filtersOpen && <MediaListControls params={params} onChange={setParams} />}
 
       {loading ? (
         <div className="page-loading">Loading watchlist…</div>
@@ -82,24 +76,16 @@ export function HomePage() {
           <p>Nothing here yet. Add a title or IMDB link to get started.</p>
         </div>
       ) : (
-        <div className="media-grid">
+        <div className="media-rows">
           {items.map((item) => (
-            <MediaCard
+            <MediaRow
               key={item.id}
               item={item}
-              onMarkWatched={handleMarkWatched}
               onExcitementUpdated={handleExcitementUpdated}
             />
           ))}
         </div>
       )}
-
-      <RateMediaModal
-        open={rateTarget != null}
-        title={rateTarget?.title ?? ''}
-        onCancel={() => setRateTarget(null)}
-        onSubmit={submitRating}
-      />
     </section>
   );
 }

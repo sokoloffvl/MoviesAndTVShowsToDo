@@ -4,7 +4,7 @@ import { MediaCard } from '../components/MediaCard';
 import { RateMediaModal } from '../components/RateMediaModal';
 import { RecommendationCard } from '../components/RecommendationCard';
 import { MEDIA_REFRESHED_EVENT } from '../events/mediaRefresh';
-import type { MediaSummary, RandomPickResult } from '../types/media';
+import type { MediaDetail, MediaSummary, RandomPickResult } from '../types/media';
 import type { Recommendation } from '../types/recommendation';
 import type { UserRatingsInput } from '../types/userRatings';
 import './RandomPickPage.css';
@@ -45,6 +45,14 @@ export function RandomPickPage() {
 
   const handleMarkWatched = (item: MediaSummary) => {
     setRateTarget(item);
+  };
+
+  const handleExcitementUpdated = (updated: MediaDetail) => {
+    setPick((current) =>
+      current?.watchlistItem?.id === updated.id
+        ? { ...current, watchlistItem: { ...current.watchlistItem, excitement: updated.excitement } }
+        : current,
+    );
   };
 
   const submitRating = async (ratings: UserRatingsInput) => {
@@ -113,7 +121,11 @@ export function RandomPickPage() {
               />
             ) : (
               pick.watchlistItem && (
-                <MediaCard item={pick.watchlistItem} onMarkWatched={handleMarkWatched} />
+                <MediaCard
+                  item={pick.watchlistItem}
+                  onMarkWatched={handleMarkWatched}
+                  onExcitementUpdated={handleExcitementUpdated}
+                />
               )
             )}
           </div>

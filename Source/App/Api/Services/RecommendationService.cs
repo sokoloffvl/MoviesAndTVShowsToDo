@@ -81,15 +81,10 @@ public class RecommendationService(
             return null;
 
         var existing = await FindLibraryItemByTmdbAsync(recommendation.TmdbId, recommendation.Type, ct);
-        MediaDetailDto? detail;
         if (existing is not null)
-        {
-            detail = await watchlistGateway.GetDetailAsync(existing.Id, ct);
-        }
-        else
-        {
-            detail = await watchlistGateway.AddFromExternalIdAsync(recommendation.TmdbId, recommendation.Type, ct);
-        }
+            throw new DuplicateMediaException(existing.Title);
+
+        var detail = await watchlistGateway.AddFromExternalIdAsync(recommendation.TmdbId, recommendation.Type, ct);
 
         if (detail is null)
             return null;

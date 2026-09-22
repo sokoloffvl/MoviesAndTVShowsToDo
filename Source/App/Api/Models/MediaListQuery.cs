@@ -8,6 +8,7 @@ public enum MediaSortField
     RottenTomatoesRating,
     Title,
     SeasonsRemaining,
+    Excitement,
     Relevance
 }
 

@@ -64,6 +64,22 @@ public class MediaService(
         return item is null ? null : ToDetailDto(item);
     }
 
+    public async Task<MediaDetailDto?> UpdateExcitementAsync(
+        Guid id,
+        int excitement,
+        CancellationToken ct = default)
+    {
+        if (excitement is < 1 or > 10)
+            throw new ArgumentOutOfRangeException(nameof(excitement), "Excitement must be between 1 and 10.");
+
+        var item = await repository.GetByIdAsync(id, ct);
+        if (item is null)
+            return null;
+
+        item.Excitement = excitement;
+        return ToDetailDto(await repository.UpdateAsync(item, ct));
+    }
+
     public async Task<IReadOnlyList<MediaSearchResultDto>> SearchExternalAsync(string query, CancellationToken ct = default)
     {
         var hits = await metadataAggregator.SearchAsync(query, ct);
@@ -324,6 +340,10 @@ public class MediaService(
 
     private async Task<MediaItem> SaveAsync(MediaMetadata metadata, CancellationToken ct)
     {
+        var existing = await FindExistingAsync(metadata, ct);
+        if (existing is not null)
+            throw new DuplicateMediaException(existing.Title);
+
         var item = new MediaItem
         {
             Id = Guid.NewGuid(),
@@ -347,6 +367,27 @@ public class MediaService(
         };
 
         return await repository.AddAsync(item, ct);
+    }
+
+    private async Task<MediaItem?> FindExistingAsync(MediaMetadata metadata, CancellationToken ct)
+    {
+        var library = await repository.GetAllAsync(new MediaListQuery(), ct);
+        if (!string.IsNullOrWhiteSpace(metadata.TmdbId))
+        {
+            var byTmdb = library.FirstOrDefault(i =>
+                i.Type == metadata.Type
+                && !string.IsNullOrWhiteSpace(i.TmdbId)
+                && string.Equals(i.TmdbId, metadata.TmdbId, StringComparison.Ordinal));
+            if (byTmdb is not null)
+                return byTmdb;
+        }
+
+        if (string.IsNullOrWhiteSpace(metadata.ImdbId))
+            return null;
+
+        return library.FirstOrDefault(i =>
+            !string.IsNullOrWhiteSpace(i.ImdbId)
+            && string.Equals(i.ImdbId, metadata.ImdbId, StringComparison.OrdinalIgnoreCase));
     }
 
     private void QueueRecommendationsRefresh(MediaItem item)
@@ -382,7 +423,10 @@ public class MediaService(
         ToUserRatingsDto(item),
         item.IsWatched,
         item.WatchedAt,
-        item.CreatedAt);
+        item.CreatedAt)
+    {
+        Excitement = item.Excitement
+    };
 
     private async Task<HashSet<string>> GetLibraryTmdbKeysAsync(CancellationToken ct)
     {
@@ -409,7 +453,10 @@ public class MediaService(
         item.TotalSeasons,
         item.WatchedSeasons,
         ToUserRatingsDto(item),
-        item.IsWatched);
+        item.IsWatched)
+    {
+        Excitement = item.Excitement
+    };
 
     private static RecommendationDto ToRecommendationDto(
         RecommendationItem item,
