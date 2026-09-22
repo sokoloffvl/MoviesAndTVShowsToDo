@@ -2,9 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client';
 import { MediaListControls } from '../components/MediaListControls';
 import { RecommendationCard } from '../components/RecommendationCard';
+import { RecommendationRow } from '../components/RecommendationRow';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { RECOMMENDATION_SORT_OPTIONS } from '../types/media';
 import type { MediaListParams } from '../types/media';
 import type { Recommendation } from '../types/recommendation';
+import './CompactListPage.css';
 import './RecommendationsPage.css';
 
 const defaultParams: MediaListParams = {
@@ -13,8 +16,10 @@ const defaultParams: MediaListParams = {
 };
 
 export function RecommendationsPage() {
+  const compact = useIsMobile();
   const [items, setItems] = useState<Recommendation[]>([]);
   const [params, setParams] = useState<MediaListParams>(defaultParams);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
@@ -80,37 +85,74 @@ export function RecommendationsPage() {
   };
 
   return (
-    <section className="recommendations-page">
-      <div className="page-header recommendations-header">
-        <div>
-          <h1>Recommendations</h1>
-          <p>Suggestions based on your watchlist and history.</p>
+    <section className={`recommendations-page${compact ? ' compact-list-page' : ''}`}>
+      {compact ? (
+        <div className="compact-list-header">
+          <h1>Recs</h1>
+          <div className="compact-list-header-actions">
+            <button
+              type="button"
+              className="btn-toggle-filters"
+              onClick={() => setFiltersOpen((open) => !open)}
+              aria-expanded={filtersOpen}
+            >
+              {filtersOpen ? 'Hide filters' : 'Filters'}
+            </button>
+            <button
+              type="button"
+              className="btn-generate"
+              onClick={() => void handleGenerate()}
+              disabled={generating}
+            >
+              {generating ? 'Generating…' : 'Generate'}
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          className="btn-generate"
-          onClick={() => void handleGenerate()}
-          disabled={generating}
-        >
-          {generating ? 'Generating…' : 'Generate list'}
-        </button>
-      </div>
+      ) : (
+        <div className="page-header recommendations-header">
+          <div>
+            <h1>Recommendations</h1>
+            <p>Suggestions based on your watchlist and history.</p>
+          </div>
+          <button
+            type="button"
+            className="btn-generate"
+            onClick={() => void handleGenerate()}
+            disabled={generating}
+          >
+            {generating ? 'Generating…' : 'Generate list'}
+          </button>
+        </div>
+      )}
 
       {generateMessage && <div className="generate-message" role="status">{generateMessage}</div>}
       {error && <div className="page-error">{error}</div>}
 
-      <MediaListControls
-        params={params}
-        onChange={setParams}
-        hideTvProgress
-        sortOptions={RECOMMENDATION_SORT_OPTIONS}
-      />
+      {(!compact || filtersOpen) && (
+        <MediaListControls
+          params={params}
+          onChange={setParams}
+          hideTvProgress
+          sortOptions={RECOMMENDATION_SORT_OPTIONS}
+        />
+      )}
 
       {loading ? (
         <div className="page-loading">Loading recommendations…</div>
       ) : items.length === 0 ? (
         <div className="empty-state">
           No recommendations yet. Click &quot;Generate list&quot; to build suggestions from your titles.
+        </div>
+      ) : compact ? (
+        <div className="media-rows">
+          {items.map((item) => (
+            <RecommendationRow
+              key={item.id}
+              item={item}
+              adding={addingId === item.id}
+              onAddToWatchlist={(entry) => void handleAddToWatchlist(entry)}
+            />
+          ))}
         </div>
       ) : (
         <div className="media-grid">
